@@ -551,6 +551,7 @@ class TrendController extends Controller
     {
         try {
             $todo = M_Product::select('id', 'brand_name', 'status_product')
+            ->where('brand_name', '!=', '')
                 ->orderBy('brand_name', 'asc')
                 ->orderBy('status_product', 'asc') 
                 ->get();
