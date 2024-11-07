@@ -149,7 +149,7 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->post('/M_Region', ['uses' => 'MRegionController@store']);
     $router->put('/M_Region/{id}', ['uses' => 'MRegionController@update']);
     $router->get('/M_Region/{id}', ['uses' => 'MRegionController@show']);
-    $router->delete('/M_Region/{id}', ['uses' => 'MRegionController@destroy']);
+    $router->delete('/M_Region', ['uses' => 'MRegionController@destroy']);
     $router->delete('M_Regiondelete', 'MRegionController@deleteAll');
 
     // API UNTUK table m__cabangs

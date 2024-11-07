@@ -161,25 +161,36 @@ class MRegionController extends Controller
         }
     }
 
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(Request $request): JsonResponse
     {
-        DB::beginTransaction();
+       
         $user_id = 'USER TEST';
 
         try {
-            $todo = M_Region::findOrFail($id);
+            $id=$request->input('id', null);
 
-            M_Region::where('id', $id)->update(['deleted_by' => $user_id]);
-            $todo->delete();
+            if ($id) {
+                $todo = M_Region::where('id', $id);
+                $todo->delete();
+            }
+            else {
+                $todo = M_Region::latest('id');
+                $todo->update(['deleted_by' => $user_id]);
+                $todo = M_Region::latest('id');
+    
+                $todo->delete();
+            }
+            
+           
 
-            DB::commit();
+           
             return response()->json([
                 'code' => 201,
                 'status' => true,
                 'message' => 'deleted succesfully',
             ], 201);
         } catch (\Exception $e) {
-            DB::rollBack();
+         
             return response()->json([
                 'code' => 409,
                 'status' => false,
