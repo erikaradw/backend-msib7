@@ -529,9 +529,11 @@ class TrendController extends Controller
     public function getAllData()
     {
         try {
-            $todo = Sales_Unit::select('id', 'chnl_code', 'tahun')
+            $todo = Sales_Unit::select('chnl_code', 'tahun')
+                ->where('chnl_code', '!=', '')
                 ->orderBy('chnl_code', 'asc')
                 ->orderBy('tahun', 'asc')
+                ->groupBy('chnl_code', 'tahun')
                 ->get();
             return response()->json([
                 'code' => 200,
@@ -551,9 +553,9 @@ class TrendController extends Controller
     {
         try {
             $todo = M_Product::select('id', 'brand_name', 'status_product')
-            ->where('brand_name', '!=', '')
+                ->where('brand_name', '!=', '')
                 ->orderBy('brand_name', 'asc')
-                ->orderBy('status_product', 'asc') 
+                ->orderBy('status_product', 'asc')
                 ->get();
             return response()->json([
                 'code' => 200,
