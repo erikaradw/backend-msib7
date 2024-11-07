@@ -529,7 +529,8 @@ class TrendController extends Controller
     public function getAllData()
     {
         try {
-            $todo = Sales_Unit::orderBy('chnl_code', 'asc')
+            $todo = Sales_Unit::select('id', 'chnl_code', 'tahun')
+                ->orderBy('chnl_code', 'asc')
                 ->orderBy('tahun', 'asc')
                 ->get();
             return response()->json([
