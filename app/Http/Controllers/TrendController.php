@@ -552,10 +552,11 @@ class TrendController extends Controller
     public function getAllDatas()
     {
         try {
-            $todo = M_Product::select('id', 'brand_name', 'status_product')
+            $todo = M_Product::select('brand_name', 'status_product')
                 ->where('brand_name', '!=', '')
                 ->orderBy('brand_name', 'asc')
                 ->orderBy('status_product', 'asc')
+                ->groupBy('brand_name', 'status_product')
                 ->get();
             return response()->json([
                 'code' => 200,
