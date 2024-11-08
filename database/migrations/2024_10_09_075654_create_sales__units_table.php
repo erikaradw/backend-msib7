@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('item_code')->nullable();
             $table->string('net_sales_unit')->nullable();
             $table->string('cust_code')->nullable();
+            $table->boolean('data_baru')->nullable();
             $table->timestamps();
             $table->softDeletes();
             $table->string('created_by');

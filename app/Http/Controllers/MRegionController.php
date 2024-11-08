@@ -7,6 +7,7 @@ use App\Models\M_Region;
 use Exception;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Models\PublicModel;
 use Illuminate\Http\{Request, JsonResponse};
 
@@ -109,12 +110,16 @@ class MRegionController extends Controller
     {
         DB::beginTransaction();
         try {
+            $todo = M_Region::where('data_baru', true);
+            $todo->update(['data_baru' => false]);
             $user_id = 'USER TEST'; // Sesuaikan dengan ID pengguna yang sebenarnya
             $data_csv = json_decode(json_encode($req->csv), true);
             foreach ($data_csv as $key => $value) {
                 $data = array();
                 $data['region_code'] = $value['region_code'];
                 $data['region_name'] = $value['region_name'];
+                $data['data_baru'] = true;
+
                 $data['created_by'] = $req->userid;
                 $data['updated_by'] = $req->userid;
                 $todos = M_Region::create($data);
@@ -134,6 +139,37 @@ class MRegionController extends Controller
             ], 403);
         }
     }
+    
+    public function destroy(Request $request): JsonResponse
+    {
+        $user_id = 'USER TEST';
+        try {
+            $id = $request->input('id', null);
+            if ($id) {
+                $todo = M_Region::where('id', $id);
+                $todo->delete();
+            } else {
+                $todo = M_Region::where('data_baru', true);
+                $todo->update(['deleted_by' => $user_id]);
+                
+                $todo->delete();
+            }
+            return response()->json([
+                'code' => 201,
+                'status' => true,
+                'message' => 'deleted succesfully',
+            ], 201);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'code' => 409,
+                'status' => false,
+                'message' => 'delete failed',
+                'e' => $e,
+            ], 409);
+        }
+    }
+
     public function deleteAll()
     {
         try {
@@ -161,45 +197,6 @@ class MRegionController extends Controller
         }
     }
 
-    public function destroy(Request $request): JsonResponse
-    {
-       
-        $user_id = 'USER TEST';
-
-        try {
-            $id=$request->input('id', null);
-
-            if ($id) {
-                $todo = M_Region::where('id', $id);
-                $todo->delete();
-            }
-            else {
-                $todo = M_Region::latest('id');
-                $todo->update(['deleted_by' => $user_id]);
-                $todo = M_Region::latest('id');
-    
-                $todo->delete();
-            }
-            
-           
-
-           
-            return response()->json([
-                'code' => 201,
-                'status' => true,
-                'message' => 'deleted succesfully',
-            ], 201);
-        } catch (\Exception $e) {
-         
-            return response()->json([
-                'code' => 409,
-                'status' => false,
-                'message' => 'delete failed',
-                'e' => $e,
-            ], 409);
-        }
-    }
-
     public function update(Request $request, int $id): JsonResponse
     {
         DB::beginTransaction();
@@ -207,8 +204,6 @@ class MRegionController extends Controller
         $data = $this->validate($request, [
             'region_code' => "required",
             'region_name' => 'required',
-
-
         ]);
 
         try {

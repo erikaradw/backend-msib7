@@ -88,7 +88,7 @@ class SalesUnitController extends Controller
             ], 403);
         }
     }
-   
+
     public function insertBulk(Request $request): JsonResponse
     {
         $csvData = $request->input('csv');
@@ -149,6 +149,8 @@ class SalesUnitController extends Controller
     {
         DB::beginTransaction();
         try {
+            $todo = Sales_Unit::where('data_baru', true)->orWhere('data_baru', null);
+            $todo->update(['data_baru' => false]);
             $user_id = 'USER TEST'; // Sesuaikan dengan ID pengguna yang sebenarnya
             $data_csv = json_decode(json_encode($req->csv), true);
             foreach ($data_csv as $key => $value) {
@@ -162,6 +164,7 @@ class SalesUnitController extends Controller
                 $data['chnl_code'] = $value['chnl_code'];
                 $data['net_sales_unit'] = $value['net_sales_unit'];
                 $data['cust_code'] = $value['cust_code'];
+                $data['data_baru'] = true;
 
                 $data['created_by'] = $req->userid;
                 $data['updated_by'] = $req->userid;
@@ -182,26 +185,27 @@ class SalesUnitController extends Controller
             ], 403);
         }
     }
-
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(Request $request): JsonResponse
     {
-        DB::beginTransaction();
         $user_id = 'USER TEST';
-
         try {
-            $todo = Sales_Unit::findOrFail($id);
+            $id = $request->input('id', null);
+            if ($id) {
+                $todo = Sales_Unit::where('id', $id);
+                $todo->delete();
+            } else {
+                $todo = Sales_Unit::where('data_baru', true);
+                $todo->update(['deleted_by' => $user_id]);
 
-            Sales_Unit::where('id', $id)->update(['deleted_by' => $user_id]);
-            $todo->delete();
-
-            DB::commit();
+                $todo->delete();
+            }
             return response()->json([
                 'code' => 201,
                 'status' => true,
                 'message' => 'deleted succesfully',
             ], 201);
         } catch (\Exception $e) {
-            DB::rollBack();
+
             return response()->json([
                 'code' => 409,
                 'status' => false,
@@ -210,6 +214,34 @@ class SalesUnitController extends Controller
             ], 409);
         }
     }
+
+    // public function destroy(Request $request, int $id): JsonResponse
+    // {
+    //     DB::beginTransaction();
+    //     $user_id = 'USER TEST';
+
+    //     try {
+    //         $todo = Sales_Unit::findOrFail($id);
+
+    //         Sales_Unit::where('id', $id)->update(['deleted_by' => $user_id]);
+    //         $todo->delete();
+
+    //         DB::commit();
+    //         return response()->json([
+    //             'code' => 201,
+    //             'status' => true,
+    //             'message' => 'deleted succesfully',
+    //         ], 201);
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         return response()->json([
+    //             'code' => 409,
+    //             'status' => false,
+    //             'message' => 'delete failed',
+    //             'e' => $e,
+    //         ], 409);
+    //     }
+    // }
 
     public function show(int $id): JsonResponse
     {

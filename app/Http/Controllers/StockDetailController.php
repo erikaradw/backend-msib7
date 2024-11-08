@@ -117,6 +117,8 @@ class StockDetailController extends Controller
     {
         DB::beginTransaction();
         try {
+            $todo = Stock_Detail::where('data_baru', true)->orWhere('data_baru', null);
+            $todo->update(['data_baru' => false]);
             $user_id = 'USER TEST'; // Sesuaikan dengan ID pengguna yang sebenarnya
             $data_csv = json_decode(json_encode($req->csv), true);
             foreach ($data_csv as $key => $value) {
@@ -128,6 +130,7 @@ class StockDetailController extends Controller
                 $data['brch_name'] = $value['brch_name'];
                 $data['item_code'] = $value['item_code'];
                 $data['on_hand_unit'] = $value['on_hand_unit'];
+                $data['data_baru'] = true;
 
                 $data['created_by'] = $req->userid;
                 $data['updated_by'] = $req->userid;
@@ -149,25 +152,27 @@ class StockDetailController extends Controller
         }
     }
 
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(Request $request): JsonResponse
     {
-        DB::beginTransaction();
         $user_id = 'USER TEST';
-
         try {
-            $todo = Stock_Detail::findOrFail($id);
+            $id = $request->input('id', null);
+            if ($id) {
+                $todo = Stock_Detail::where('id', $id);
+                $todo->delete();
+            } else {
+                $todo = Stock_Detail::where('data_baru', true);
+                $todo->update(['deleted_by' => $user_id]);
 
-            Stock_Detail::where('id', $id)->update(['deleted_by' => $user_id]);
-            $todo->delete();
-
-            DB::commit();
+                $todo->delete();
+            }
             return response()->json([
                 'code' => 201,
                 'status' => true,
                 'message' => 'deleted succesfully',
             ], 201);
         } catch (\Exception $e) {
-            DB::rollBack();
+
             return response()->json([
                 'code' => 409,
                 'status' => false,

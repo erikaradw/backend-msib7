@@ -15,11 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('region_code')->nullable();
             $table->string('region_name')->nullable();
+            $table->boolean('data_baru')->nullable();     
             $table->timestamps();
             $table->softDeletes();
             $table->string('created_by')->nullable();
             $table->string('updated_by')->nullable();
             $table->string('deleted_by')->nullable();
+
         });
     }
 

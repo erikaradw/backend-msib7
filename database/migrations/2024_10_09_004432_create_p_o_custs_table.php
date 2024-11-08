@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('mtg_code')->nullable();
             $table->string('qty_sc_reg')->nullable();
             $table->string('branch_code')->nullable();
+            $table->boolean('data_baru')->nullable();
             $table->timestamps();
             $table->softDeletes();
             $table->string('created_by');

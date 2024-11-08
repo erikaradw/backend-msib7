@@ -113,6 +113,8 @@ class POCustController extends Controller
     {
         DB::beginTransaction();
         try {
+            $todo = POCust::where('data_baru', true)->orWhere('data_baru', null);
+            $todo->update(['data_baru' => false]);
             $user_id = 'USER TEST'; // Sesuaikan dengan ID pengguna yang sebenarnya
             $data_csv = json_decode(json_encode($req->csv), true);
             foreach ($data_csv as $key => $value) {
@@ -122,6 +124,7 @@ class POCustController extends Controller
                 $data['mtg_code'] = $value['mtg_code'];
                 $data['qty_sc_reg'] = $value['qty_sc_reg'];
                 $data['branch_code'] = $value['branch_code'];
+                $data['data_baru'] = true;
 
                 $data['created_by'] = $req->userid;
                 $data['updated_by'] = $req->userid;
@@ -142,26 +145,28 @@ class POCustController extends Controller
             ], 403);
         }
     }
-
-    public function destroy(Request $request, int $id): JsonResponse
+    
+    public function destroy(Request $request): JsonResponse
     {
-        DB::beginTransaction();
         $user_id = 'USER TEST';
-
         try {
-            $todo = POCust::findOrFail($id);
+            $id = $request->input('id', null);
+            if ($id) {
+                $todo = POCust::where('id', $id);
+                $todo->delete();
+            } else {
+                $todo = POCust::where('data_baru', true);
+                $todo->update(['deleted_by' => $user_id]);
 
-            POCust::where('id', $id)->update(['deleted_by' => $user_id]);
-            $todo->delete();
-
-            DB::commit();
+                $todo->delete();
+            }
             return response()->json([
                 'code' => 201,
                 'status' => true,
                 'message' => 'deleted succesfully',
             ], 201);
         } catch (\Exception $e) {
-            DB::rollBack();
+
             return response()->json([
                 'code' => 409,
                 'status' => false,
@@ -170,6 +175,34 @@ class POCustController extends Controller
             ], 409);
         }
     }
+
+    // public function destroy(Request $request, int $id): JsonResponse
+    // {
+    //     DB::beginTransaction();
+    //     $user_id = 'USER TEST';
+
+    //     try {
+    //         $todo = POCust::findOrFail($id);
+
+    //         POCust::where('id', $id)->update(['deleted_by' => $user_id]);
+    //         $todo->delete();
+
+    //         DB::commit();
+    //         return response()->json([
+    //             'code' => 201,
+    //             'status' => true,
+    //             'message' => 'deleted succesfully',
+    //         ], 201);
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         return response()->json([
+    //             'code' => 409,
+    //             'status' => false,
+    //             'message' => 'delete failed',
+    //             'e' => $e,
+    //         ], 409);
+    //     }
+    // }
 
     public function show(int $id): JsonResponse
     {

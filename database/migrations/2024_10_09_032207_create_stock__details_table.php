@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('brch_name')->nullable();
             $table->string('item_code')->nullable();
             $table->string('on_hand_unit')->nullable();
+            $table->boolean('data_baru')->nullable();
             $table->timestamps();
             $table->softDeletes();
             $table->string('created_by');

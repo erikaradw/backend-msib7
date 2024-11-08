@@ -74,7 +74,7 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     // ROUTES PO CUSTOMER
     $router->get('pocust', 'POCustController@paging');
     $router->post('pocust', 'POCustController@store');
-    $router->delete('pocust/{id}', 'POCustController@destroy');
+    $router->delete('pocust', 'POCustController@destroy');
     $router->get('pocust/{id}', 'POCustController@show');
     $router->put('pocust/{id}', 'POCustController@update');
     $router->delete('pocustdelete', 'POCustController@deleteAll');
@@ -83,7 +83,7 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     // ROUTES STOCK DETAIL
     $router->get('stockdetail', 'StockDetailController@paging');
     $router->post('stockdetail', 'StockDetailController@store');
-    $router->delete('stockdetail/{id}', 'StockDetailController@destroy');
+    $router->delete('stockdetail', 'StockDetailController@destroy');
     $router->get('stockdetail/{id}', 'StockDetailController@show');
     $router->put('stockdetail/{id}', 'StockDetailController@update');
     $router->delete('stockdetaildelete', 'StockDetailController@deleteAll');
@@ -92,9 +92,9 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     // ROUTES SALES UNIT
     $router->get('salesunit', 'SalesUnitController@paging');
     $router->post('salesunit', 'SalesUnitController@store');
-    $router->delete('salesunit/{id}', 'SalesUnitController@destroy');
     $router->get('salesunit/{id}', 'SalesUnitController@show');
     $router->put('salesunit/{id}', 'SalesUnitController@update');
+    $router->delete('salesunit', 'SalesUnitController@destroy');
     $router->delete('salesunitdelete', 'SalesUnitController@deleteAll');
     $router->post('salesunitinsertBulk', 'SalesUnitController@insertBulk');
 
@@ -373,5 +373,4 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->get('M_Areaget', ['uses' => 'MAreaController@getByData']);
     $router->get('TrendData', ['uses' => 'TrendController@getTrendData']);
     $router->get('cabangdistcode', ['uses' => 'MCabangController@getDataByDistCode']);
-
 });
