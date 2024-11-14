@@ -58,6 +58,7 @@ class POCustController extends Controller
             'tgl_order' => 'required',
             'mtg_code'   => 'required',
             'qty_sc_reg' => 'required',
+            'qty_po' => 'required',
             'branch_code' => 'required',
         ]);
 
@@ -123,6 +124,7 @@ class POCustController extends Controller
                 $data['tgl_order'] = $value['tgl_order'];
                 $data['mtg_code'] = $value['mtg_code'];
                 $data['qty_sc_reg'] = $value['qty_sc_reg'];
+                $data['qty_po'] = $value['qty_po'];
                 $data['branch_code'] = $value['branch_code'];
                 $data['data_baru'] = true;
 
@@ -232,6 +234,7 @@ class POCustController extends Controller
             'tgl_order' => 'required',
             'mtg_code'   => 'required',
             'qty_sc_reg' => 'required',
+            'qty_po' => 'required',
             'branch_code' => 'required',
         ]);
 

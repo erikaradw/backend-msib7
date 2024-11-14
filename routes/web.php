@@ -107,7 +107,7 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->get('trendSelectData', ['uses' => 'TrendController@getSelectData']);
     $router->get('/monthly-sales-data', ['uses' => 'TrendController@getMonthlySalesData']);
     $router->delete('trenddelete', 'TrendController@deleteAll');
-    $router->get('/insert-trends-data', 'TrendController@insertTrendsData');
+    $router->get('/upsertTrends', 'TrendController@upsertTrends');
 
     $router->get('trend_g', 'TrendGController@paging');
     $router->post('trend_g', 'TrendGController@store');
@@ -118,6 +118,7 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->get('/monthly-sales-trend-g', ['uses' => 'TrendGController@getMonthlySalesTrendG']);
     $router->delete('trenddelete_g', 'TrendGController@deleteAll');
     $router->get('/insert-trendsg', 'TrendGController@insertTrendsg');
+    $router->get('tahunTrend', ['uses' => 'TrendGController@getAllData']);
 
     // API UNTUK table m__products
     $router->get('/M_Product', ['uses' => 'MProductController@paging']);
@@ -187,147 +188,6 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->delete('M_Kategoridelete', 'MKategoriController@deleteAll');
     $router->post('M_KategoriinsertBulk', 'MKategoriController@insertBulk');
 
-    // $router->get('user', 'MUserController@getData');
-    // $router->get('user/{id}', 'MUserController@show');
-    // $router->post('user', 'MUserController@store');
-    // $router->put('user/{id}', 'MUserController@update');
-    // $router->delete('user/{id}', 'MUserController@destroy');
-
-    // $router->get('/MMUser', ['uses' => 'MMUserController@paging']);
-    // $router->get('/MMUser/{id}', ['uses' => 'MMUserController@show']);
-    // $router->post('/MMUser', ['uses' => 'MMUserController@store']);
-    // $router->put('/MMUser/{id}', ['uses' => 'MMUserController@update']);
-    // $router->delete('/MMUser/{id}', ['uses' => 'MMUserController@destroy']);
-
-    // $router->get('/MTonaseTypeAll', ['uses' => 'MTonaseTypeController@index']);
-    // $router->get('/MTonaseType', ['uses' => 'MTonaseTypeController@paging']);
-    // $router->get('/MTonaseType/{id}', ['uses' => 'MTonaseTypeController@show']);
-    // $router->post('/MTonaseType', ['uses' => 'MTonaseTypeController@store']);
-    // $router->put('/MTonaseType/{id}', ['uses' => 'MTonaseTypeController@update']);
-    // $router->delete('/MTonaseType/{id}', ['uses' => 'MTonaseTypeController@destroy']);
-
-    // $router->get('/MTonaseUnitAll', ['uses' => 'MTonaseUnitController@index']);
-    // $router->get('/MTonaseUnit', ['uses' => 'MTonaseUnitController@paging']);
-    // $router->get('/MTonaseUnit/{id}', ['uses' => 'MTonaseUnitController@show']);
-    // $router->post('/MTonaseUnit', ['uses' => 'MTonaseUnitController@store']);
-    // $router->put('/MTonaseUnit/{id}', ['uses' => 'MTonaseUnitController@update']);
-    // $router->delete('/MTonaseUnit/{id}', ['uses' => 'MTonaseUnitController@destroy']);
-
-    // $router->get('/MItemTonaseOpt', ['uses' => 'MItemTonaseOptController@paging']);
-    // $router->get('/MItemTonaseOpt/{id}', ['uses' => 'MItemTonaseOptController@show']);
-    // $router->post('/MItemTonaseOpt', ['uses' => 'MItemTonaseOptController@store']);
-    // $router->put('/MItemTonaseOpt/{id}', ['uses' => 'MItemTonaseOptController@update']);
-    // $router->delete('/MItemTonaseOpt/{id}', ['uses' => 'MItemTonaseOptController@destroy']);
-
-    // //api m_discount erika
-    // $router->get('/M_Discount', ['uses' => 'M_DiscountController@paging']);
-    // $router->post('/M_Discount', ['uses' => 'M_DiscountController@store']);
-    // $router->put('/M_Discount/{id}', ['uses' => 'M_DiscountController@update']);
-    // $router->get('/M_Discount/{id}', ['uses' => 'M_DiscountController@show']);
-    // $router->delete('/M_Discount/{id}', ['uses' => 'M_DiscountController@destroy']);
-
-    // // farizz
-    // $router->get('/MItemOptInfo', ['uses' => 'MItemOptInfoController@paging']);
-    // $router->get('/MItemOptInfo/{id}', ['uses' => 'MItemOptInfoController@showData']);
-    // $router->post('/MItemOptInfo', ['uses' => 'MItemOptInfoController@storeData']);
-    // $router->put('/MItemOptInfo/{id}', ['uses' => 'MItemOptInfoController@updateData']);
-    // $router->delete('/MItemOptInfo/{id}', ['uses' => 'MItemOptInfoController@destroyData']);
-
-    // $router->get('/MItemOptDetail/OptDetailCodes', ['uses' => 'MItemOptDetailController@getAllOptDetailCodeOnly']);
-    // $router->get('/MItemOptDetail', ['uses' => 'MItemOptDetailController@paging']);
-    // $router->get('/MItemOptDetail/{id}', ['uses' => 'MItemOptDetailController@showData']);
-    // $router->post('/MItemOptDetail', ['uses' => 'MItemOptDetailController@storeData']);
-    // $router->put('/MItemOptDetail/{id}', ['uses' => 'MItemOptDetailController@updateData']);
-    // $router->delete('/MItemOptDetail/{id}', ['uses' => 'MItemOptDetailController@destroyData']);
-
-    // // Routing untuk m_item ihza
-    // $router->get('/m_item', ['uses' => 'MItemController@paging']); // Untuk pagination dan pencarian
-    // $router->post('/m_item', ['uses' => 'MItemController@store']); // Menyimpan data baru
-    // $router->get('/m_item/{id}', ['uses' => 'MItemController@show']); // Menampilkan detail data berdasarkan ID
-    // $router->put('/m_item/{id}', ['uses' => 'MItemController@update']); // Memperbarui data berdasarkan ID
-    // $router->delete('/m_item/{id}', ['uses' => 'MItemController@destroy']); // Menghapus data berdasarkan ID (soft delete)
-    // $router->get('/m_itemAll', ['uses' => 'MItemController@getAllData']);
-
-    // // Routing untuk m_item_inventory ihza
-    // $router->get('/m_item_inventory', ['uses' => 'MItemInventoryController@paging']);
-    // $router->post('/m_item_inventory', ['uses' => 'MItemInventoryController@store']); // Menyimpan data baru
-    // $router->get('/m_item_inventory/{id}', ['uses' => 'MItemInventoryController@show']); // Menampilkan detail data berdasarkan ID
-    // $router->put('/m_item_inventory/{id}', ['uses' => 'MItemInventoryController@update']); // Memperbarui data berdasarkan ID
-    // $router->delete('/m_item_inventory/{id}', ['uses' => 'MItemInventoryController@destroy']); // Menghapus data berdasarkan ID (soft delete)
-
-    // // API UNTUK table m_warehouse jonatan
-    // $router->get('/M_Warehouse', ['uses' => 'M_WarehouseController@paging']);
-    // $router->post('/M_Warehouse', ['uses' => 'M_WarehouseController@store']);
-    // $router->put('/M_Warehouse/{id}', ['uses' => 'M_WarehouseController@update']);
-    // $router->get('/M_Warehouse/{id}', ['uses' => 'M_WarehouseController@show']);
-    // $router->delete('/M_Warehouse/{id}', ['uses' => 'M_WarehouseController@destroy']);
-
-    // // API UNTUK table m_warehouse jonatan
-    // $router->get('/M_Warehouse_Type', ['uses' => 'MwtController@paging']);
-    // $router->post('/M_Warehouse_Type', ['uses' => 'MwtController@store']);
-    // $router->put('/M_Warehouse_Type/{id}', ['uses' => 'MwtController@update']);
-    // $router->get('/M_Warehouse_Type/{id}', ['uses' => 'MwtController@show']);
-    // $router->delete('/M_Warehouse_Type/{id}', ['uses' => 'MwtController@destroy']);
-
-    // //mitemprice khalaf
-    // $router->get('/mitemprice', ['uses' => 'MitemPriceController@paging']);
-    // $router->post('/mitemprice', ['uses' => 'MitemPriceController@store']);
-    // $router->delete('/mitemprice/{id}', ['uses' => 'MitemPriceController@destroy']);
-    // $router->put('mitemprice/{id}', ['uses' => 'MitemPriceController@update']);
-    // $router->get('mitemprice/{id}', ['uses' => 'MitemPriceController@show']);
-
-    // //mitemdiscont khalaf
-    // $router->get('/mitemdiscount', ['uses' => 'MitemDiscountController@paging']);
-    // $router->post('/mitemdiscount', ['uses' => 'MitemDiscountController@store']);
-    // $router->delete('/mitemdiscount/{id}', ['uses' => 'MitemDiscountController@destroy']);
-    // $router->put('mitemdiscount/{id}', ['uses' => 'MitemDiscountController@update']);
-    // $router->get('mitemdiscount/{id}', ['uses' => 'MitemDiscountController@show']);
-
-    //m_item_opt_setting amar
-    // $router->get('/MItemoptsetting', ['uses' => 'MItemoptsettingController@paging']);
-    // $router->post('/MItemoptsetting', ['uses' => 'MItemoptsettingController@store']);
-    // $router->delete('/MItemoptsetting/{id}', ['uses' => 'MItemoptsettingController@destroy']);
-
-    // $router->get('/MItemoptsetting/{id}', ['uses' => 'MItemoptsettingController@show']);
-    // $router->put('/MItemoptsetting/{id}', ['uses' => 'MItemoptsettingController@update']);
-
-
-    // // company putri
-    // $router->get('company', 'MCompanyController@paging');
-    // $router->post('company', 'MCompanyController@store');
-    // $router->delete('company/{id}', 'MCompanyController@destroy');
-    // $router->get('company/{id}', 'MCompanyController@show');
-    // $router->put('company/{id}', 'MCompanyController@update');
-
-
-    // // counter putri
-    // $router->get('counter', 'CounterPreferenceController@paging');
-    // $router->post('counter', 'CounterPreferenceController@store');
-    // $router->delete('counter/{id}', 'CounterPreferenceController@destroy');
-    // $router->get('counter/{id}', 'CounterPreferenceController@show');
-    // $router->put('counter/{id}', 'CounterPreferenceController@update');
-
-    // ROUTES STM
-    // $router->get('stm', 'StmController@paging');
-    // $router->post('stm', 'StmController@store');
-    // $router->delete('stm/{id}', 'StmController@destroy');
-    // $router->get('stm/{id}', 'StmController@show');
-    // $router->put('stm/{id}', 'StmController@update');
-
-    // // ROUTES STD
-    // $router->get('std', 'StdController@paging');
-    // $router->post('std', 'StdController@store');
-    // $router->delete('std/{id}', 'StdController@destroy');
-    // $router->get('std/{id}', 'StdController@show');
-    // $router->put('std/{id}', 'StdController@update');
-
-    // ROUTES BASOBA
-    // $router->get('basoba', 'BasobaController@paging');
-    // $router->post('basoba', 'BasobaController@store');
-    // $router->delete('basoba/{id}', 'BasobaController@destroy');
-    // $router->get('basoba/{id}', 'BasobaController@show');
-    // $router->put('basoba/{id}', 'BasobaController@update');
-
     $router->post('stmBulky', 'StmController@storeBulky');
     $router->post('stdBulky', 'StdController@storeBulky');
     $router->post('basobaBulky', 'BasobaController@storeBulky');
@@ -374,3 +234,35 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->get('TrendData', ['uses' => 'TrendController@getTrendData']);
     $router->get('cabangdistcode', ['uses' => 'MCabangController@getDataByDistCode']);
 });
+    // $router->get('user', 'MUserController@getData');
+    // $router->get('user/{id}', 'MUserController@show');
+    // $router->post('user', 'MUserController@store');
+    // $router->put('user/{id}', 'MUserController@update');
+    // $router->delete('user/{id}', 'MUserController@destroy');
+
+    // $router->get('/MMUser', ['uses' => 'MMUserController@paging']);
+    // $router->get('/MMUser/{id}', ['uses' => 'MMUserController@show']);
+    // $router->post('/MMUser', ['uses' => 'MMUserController@store']);
+    // $router->put('/MMUser/{id}', ['uses' => 'MMUserController@update']);
+    // $router->delete('/MMUser/{id}', ['uses' => 'MMUserController@destroy']);
+
+    // ROUTES STM
+    // $router->get('stm', 'StmController@paging');
+    // $router->post('stm', 'StmController@store');
+    // $router->delete('stm/{id}', 'StmController@destroy');
+    // $router->get('stm/{id}', 'StmController@show');
+    // $router->put('stm/{id}', 'StmController@update');
+
+    // // ROUTES STD
+    // $router->get('std', 'StdController@paging');
+    // $router->post('std', 'StdController@store');
+    // $router->delete('std/{id}', 'StdController@destroy');
+    // $router->get('std/{id}', 'StdController@show');
+    // $router->put('std/{id}', 'StdController@update');
+
+    // ROUTES BASOBA
+    // $router->get('basoba', 'BasobaController@paging');
+    // $router->post('basoba', 'BasobaController@store');
+    // $router->delete('basoba/{id}', 'BasobaController@destroy');
+    // $router->get('basoba/{id}', 'BasobaController@show');
+    // $router->put('basoba/{id}', 'BasobaController@update');

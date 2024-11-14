@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Http\JsonResponse;
 use App\Models\trend_g;
+use App\Models\Sales_Unit;
 use App\Models\PublicModel;
 use Illuminate\Support\Facades\Log;
 
@@ -360,21 +361,23 @@ class TrendGController extends Controller
         );
     }
 
-    public function getAllData(): JsonResponse
+    public function getAllData()
     {
         try {
-            $todo = trend_g::get();
+            $todo = Sales_Unit::select('tahun')
+                ->orderBy('tahun', 'asc')
+                ->groupBy('tahun')
+                ->get();
             return response()->json([
                 'code' => 200,
                 'status' => true,
-                'message' => "$this->judul_halaman_notif success get data",
-                'results' => $todo
-            ]);
+                'data' => $todo
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'code' => 409,
                 'status' => false,
-                'message' => "$this->judul_halaman_notif failed get data",
+                'message' => $e->getMessage()
             ], 409);
         }
     }
@@ -651,13 +654,13 @@ class TrendGController extends Controller
     {
         $URL = URL::current();
         if (!isset($request->search)) {
-            $count = count((new trend_g())->countMonthlySalesTrendG($request->search));
+            $count = count((new trend_g())->countMonthlySalesTrendG($request->search, $request->tahun));
             $arr_pagination = (new PublicModel())->pagination_without_search(
                 $URL,
                 $request->limit,
                 $request->offset
             );
-            $todos = (new trend_g())->getMonthlySalesTrendG($request->search, $arr_pagination);
+            $todos = (new trend_g())->getMonthlySalesTrendG($request->search, $arr_pagination, $request->tahun);
         } else {
             $arr_pagination = (new PublicModel())->pagination_without_search(
                 $URL,
@@ -665,23 +668,20 @@ class TrendGController extends Controller
                 $request->offset,
                 $request->search
             );
-            $todos = (new trend_g())->getMonthlySalesTrendG($request->search, $arr_pagination);
-            $count = count((new trend_g())->countMonthlySalesTrendG($request->search));
+            $todos = (new trend_g())->getMonthlySalesTrendG($request->search, $arr_pagination, $request->tahun);
+            $count = count((new trend_g())->countMonthlySalesTrendG($request->search, $request->tahun));
         }
         return response()->json(
             (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
             200
         );
-        // $trendModel = new Trend();
-        // $data = $trendModel->getMonthlySalesData();
-
-        // return response()->json($data);
     }
 
     public function insertTrendsg()
     {
-        return DB::select("
-     WITH aggregated_sales AS (
+        // Simpan hasil query ke dalam variabel $data
+        $data = DB::select("
+           WITH aggregated_sales AS (
     SELECT 
         tahun,
         item_code,
@@ -787,63 +787,74 @@ JOIN m__products uc ON s.item_code = uc.item_code
 LEFT JOIN m__kategoris mk ON uc.parent_code = mk.parent_code
 JOIN m__cabangs mcb ON s.kode_cabang = mcb.kode_cabang;
         ");
-
-       
-        // Insert data ke tabel `trend_gs`
-        foreach ($data as $row) {
-            DB::table('trend_gs')->insert([
-                'dist_code' => $row->dist_code,
-                'chnl_code' => $row->chnl_code,
-                'region_name' => $row->region_name,
-                'area_name' => $row->area_name,
-                'kode_cabang' => $row->kode_cabang,
-                'nama_cabang' => $row->nama_cabang,
-                'parent_code' => $row->parent_code,
-                'item_code' => $row->item_code,
-                'item_name' => $row->item_name,
-                'brand_name' => $row->brand_name,
-                'kategori' => $row->kategori,
-                'status_product' => $row->status_product,
-                'tahun' => $row->tahun,
-                'januari' => $row->januari,
-                'februari' => $row->februari,
-                'maret' => $row->maret,
-                'april' => $row->april,
-                'mei' => $row->mei,
-                'juni' => $row->juni,
-                'juli' => $row->juli,
-                'agustus' => $row->agustus,
-                'september' => $row->september,
-                'oktober' => $row->oktober,
-                'november' => $row->november,
-                'desember' => $row->desember,
-                'beli_januari' => $row->beli_januari,
-                'beli_februari' => $row->beli_februari,
-                'beli_maret' => $row->beli_maret,
-                'beli_april' => $row->beli_april,
-                'beli_mei' => $row->beli_mei,
-                'beli_juni' => $row->beli_juni,
-                'beli_juli' => $row->beli_juli,
-                'beli_agustus' => $row->beli_agustus,
-                'beli_september' => $row->beli_september,
-                'beli_oktober' => $row->beli_oktober,
-                'beli_november' => $row->beli_november,
-                'beli_desember' => $row->beli_desember,
-                'januari1' => $row->januari1,
-                'februari1' => $row->februari1,
-                'maret1' => $row->maret1,
-                'april1' => $row->april1,
-                'mei1' => $row->mei1,
-                'juni1' => $row->juni1,
-                'juli1' => $row->juli1,
-                'agustus1' => $row->agustus1,
-                'september1' => $row->september1,
-                'oktober1' => $row->oktober1,
-                'november1' => $row->november1,
-                'desember1' => $row->desember1,
-            ]);
+        
+        // Cek apakah $data tidak kosong
+        if (empty($data)) {
+            return "Tidak ada data yang dihasilkan dari query.";
         }
-
-        return "Data berhasil dimasukkan ke tabel trend_gs.";
+    
+        // Bungkus proses insert dalam transaksi
+        DB::beginTransaction();
+        try {
+            foreach ($data as $row) {
+                DB::table('trend_gs')->insert([
+                    'dist_code' => $row->dist_code,
+                    'chnl_code' => $row->chnl_code,
+                    'region_name' => $row->region_name,
+                    'area_name' => $row->area_name,
+                    'kode_cabang' => $row->kode_cabang,
+                    'nama_cabang' => $row->nama_cabang,
+                    'parent_code' => $row->parent_code,
+                    'item_code' => $row->item_code,
+                    'item_name' => $row->item_name,
+                    'brand_name' => $row->brand_name,
+                    'kategori' => $row->kategori,
+                    'status_product' => $row->status_product,
+                    'tahun' => $row->tahun,
+                    'januari' => $row->januari,
+                    'februari' => $row->februari,
+                    'maret' => $row->maret,
+                    'april' => $row->april,
+                    'mei' => $row->mei,
+                    'juni' => $row->juni,
+                    'juli' => $row->juli,
+                    'agustus' => $row->agustus,
+                    'september' => $row->september,
+                    'oktober' => $row->oktober,
+                    'november' => $row->november,
+                    'desember' => $row->desember,
+                    'beli_januari' => $row->beli_januari,
+                    'beli_februari' => $row->beli_februari,
+                    'beli_maret' => $row->beli_maret,
+                    'beli_april' => $row->beli_april,
+                    'beli_mei' => $row->beli_mei,
+                    'beli_juni' => $row->beli_juni,
+                    'beli_juli' => $row->beli_juli,
+                    'beli_agustus' => $row->beli_agustus,
+                    'beli_september' => $row->beli_september,
+                    'beli_oktober' => $row->beli_oktober,
+                    'beli_november' => $row->beli_november,
+                    'beli_desember' => $row->beli_desember,
+                    'januari1' => $row->januari1,
+                    'februari1' => $row->februari1,
+                    'maret1' => $row->maret1,
+                    'april1' => $row->april1,
+                    'mei1' => $row->mei1,
+                    'juni1' => $row->juni1,
+                    'juli1' => $row->juli1,
+                    'agustus1' => $row->agustus1,
+                    'september1' => $row->september1,
+                    'oktober1' => $row->oktober1,
+                    'november1' => $row->november1,
+                    'desember1' => $row->desember1,
+                ]);
+            }
+            DB::commit();
+            return "Data berhasil dimasukkan ke tabel trend_gs.";
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return "Error saat memasukkan data: " . $e->getMessage();
+        }
     }
+    
 }

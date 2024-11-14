@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('tgl_order')->nullable();
             $table->string('mtg_code')->nullable();
             $table->string('qty_sc_reg')->nullable();
+            $table->string('qty_po')->nullable();
             $table->string('branch_code')->nullable();
             $table->boolean('data_baru')->nullable();
             $table->timestamps();

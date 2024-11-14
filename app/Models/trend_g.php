@@ -218,7 +218,7 @@ class trend_g extends Model
         return $data;
     }
 
-    public function getMonthlySalesTrendG($search, $arr_pagination)
+    public function getMonthlySalesTrendG($search, $arr_pagination, $tahun)
     {
         // Jika ada pencarian, reset offset pagination ke 0
         if (!empty($search)) {
@@ -345,76 +345,12 @@ JOIN m__cabangs mcb ON s.kode_cabang = mcb.kode_cabang
              LOWER(mcb.area_name) LIKE '%' || LOWER(?) || '%' OR
              LOWER(mcb.kode_cabang) LIKE '%' || LOWER(?) || '%' OR
              LOWER(mk.kategori) LIKE '%' || LOWER(?) || '%')
+        AND s.tahun like '%" . $tahun . "%'
     LIMIT ? OFFSET ?
 ", [$search, $search, $search, $search, $search, $search, $search, $search, $search, $search, $search, $arr_pagination['limit'], $arr_pagination['offset']]);
-// if (empty($data)) {
-//     return response()->json(['message' => 'Data not found'], 404);
-// }
-
-// // Gunakan hasil dari query utama untuk mengisi nilai insertData
-// $result = (array)$data[0]; // Ambil baris pertama dari hasil query sebagai contoh
-
-// $insertData = [
-//     'tahun' => $result['tahun'],
-//     'item_code' => $result['item_code'],
-//     'dist_code' => $result['dist_code'],
-//     'kode_cabang' => $result['kode_cabang'],
-//     'chnl_code' => $result['chnl_code'],
-//     'januari' => $result['januari'],
-//     'februari' => $result['februari'],
-//     'maret' => $result['maret'],
-//     'april' => $result['april'],
-//     'mei' => $result['mei'],
-//     'juni' => $result['juni'],
-//     'juli' => $result['juli'],
-//     'agustus' => $result['agustus'],
-//     'september' => $result['september'],
-//     'oktober' => $result['oktober'],
-//     'november' => $result['november'],
-//     'desember' => $result['desember'],
-// ];
-
-// // Kondisi untuk update data
-// $updateData = [
-//     'januari' => $result['januari'],
-//     'februari' => $result['februari'],
-//     'maret' => $result['maret'],
-//     'april' => $result['april'],
-//     'mei' => $result['mei'],
-//     'juni' => $result['juni'],
-//     'juli' => $result['juli'],
-//     'agustus' => $result['agustus'],
-//     'september' => $result['september'],
-//     'oktober' => $result['oktober'],
-//     'november' => $result['november'],
-//     'desember' => $result['desember'],
-// ];
-
-// // Cek apakah data sudah ada di tabel trend_gs berdasarkan tahun, dist_code, chnl_code, dan item_code
-// $existingData = DB::table('trend_gs')
-//     ->where('tahun', $insertData['tahun'])
-//     ->where('dist_code', $insertData['dist_code'])
-//     ->where('chnl_code', $insertData['chnl_code'])
-//     ->where('item_code', $insertData['item_code'])
-//     ->first();
-
-// if ($existingData) {
-//     // Jika data sudah ada, lakukan update
-//     DB::table('trend_gs')
-//         ->where('tahun', $insertData['tahun'])
-//         ->where('dist_code', $insertData['dist_code'])
-//         ->where('chnl_code', $insertData['chnl_code'])
-//         ->where('item_code', $insertData['item_code'])
-//         ->update($updateData);
-// } else {
-//     // Jika data belum ada, lakukan insert
-//     DB::table('trend_gs')->insert($insertData);
-// }
-
-// return $data; // Kembalikan hasil query utama
     }        
 
-    public function countMonthlySalesTrendG($search)
+    public function countMonthlySalesTrendG($search, $tahun)
     {
         $search = strtolower($search);
         
@@ -536,6 +472,7 @@ JOIN m__cabangs mcb ON s.kode_cabang = mcb.kode_cabang
              LOWER(mcb.area_name) LIKE '%' || LOWER(?) || '%' OR
              LOWER(mcb.kode_cabang) LIKE '%' || LOWER(?) || '%' OR
              LOWER(mk.kategori) LIKE '%' || LOWER(?) || '%')
+        AND s.tahun like '%" . $tahun . "%'
 ", [$search, $search, $search, $search, $search, $search, $search, $search, $search, $search, $search]);
     }
 

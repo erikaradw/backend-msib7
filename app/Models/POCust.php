@@ -43,10 +43,11 @@ class POCust extends Model
             OR lower(tgl_order) like '%$search%'
             OR lower(mtg_code) like '%$search%'
             OR lower(qty_sc_reg) like '%$search%'
+            OR lower(qty_po) like '%$search%'
             OR lower(branch_code) like '%$search%') 
             AND deleted_by IS NULL
         ")
-            ->select('id', 'dist_code', 'tgl_order', 'mtg_code', 'qty_sc_reg', 'branch_code')
+            ->select('id', 'dist_code', 'tgl_order', 'mtg_code', 'qty_sc_reg', 'qty_po', 'branch_code')
             ->offset($arr_pagination['offset'])
             ->limit($arr_pagination['limit'])
             ->orderBy('id', 'ASC')

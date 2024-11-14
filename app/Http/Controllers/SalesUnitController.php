@@ -6,7 +6,7 @@ use App\Models\Sales_Unit;
 use App\Models\PublicModel;
 use Illuminate\Http\{Request, JsonResponse};
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\str;
 use Carbon\Support\Carbon;
@@ -213,6 +213,20 @@ class SalesUnitController extends Controller
                 'e' => $e,
             ], 409);
         }
+    }
+
+    public function deleteUploadedFile($fileId)
+    {
+        // Cari file berdasarkan ID di database atau folder penyimpanan
+        $file = Sales_Unit::find($fileId);
+        if ($file) {
+            // Hapus file dari sistem penyimpanan
+            Storage::delete($file->path);
+            // Hapus data file dari database jika disimpan di DB
+            $file->delete();
+            return response()->json(['message' => 'File deleted successfully']);
+        }
+        return response()->json(['message' => 'File not found'], 404);
     }
 
     // public function destroy(Request $request, int $id): JsonResponse
