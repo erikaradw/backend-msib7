@@ -228,7 +228,7 @@ class trend_g extends Model
         $search = strtolower($search);
 
             return DB::select("
-   WITH aggregated_sales AS (
+ WITH aggregated_sales AS (
     SELECT 
         tahun,
         item_code,
@@ -274,7 +274,7 @@ aggregated_stock AS (
 aggregated_po AS (
     SELECT 
         dist_code,
-        mtg_code AS item_code,  -- Menggunakan mtg_code sebagai item_code agar sesuai dengan sales dan stock
+        mtg_code AS item_code,
         branch_code,
         EXTRACT(YEAR FROM TO_DATE(tgl_order, 'MM/DD/YYYY'))::TEXT AS po_year,
         SUM(CASE WHEN EXTRACT(MONTH FROM TO_DATE(tgl_order, 'MM/DD/YYYY')) = 1 THEN REPLACE(qty_sc_reg, ',', '')::NUMERIC ELSE 0::NUMERIC END) AS beli_januari,
@@ -292,7 +292,7 @@ aggregated_po AS (
     FROM p_o_custs
     GROUP BY dist_code, mtg_code, branch_code, EXTRACT(YEAR FROM TO_DATE(tgl_order, 'MM/DD/YYYY'))
 )
-SELECT
+SELECT DISTINCT -- Added DISTINCT to remove duplicates
     s.tahun,
     s.dist_code,
     s.chnl_code,
@@ -326,6 +326,7 @@ FROM
 LEFT JOIN aggregated_stock st ON s.item_code = st.item_code 
     AND s.dist_code = st.dist_code 
     AND s.kode_cabang = st.kode_cabang
+    AND s.tahun = st.tahun
 LEFT JOIN aggregated_po po ON s.dist_code = po.dist_code 
     AND s.kode_cabang = po.branch_code 
     AND s.item_code = po.item_code
@@ -401,7 +402,7 @@ aggregated_stock AS (
 aggregated_po AS (
     SELECT 
         dist_code,
-        mtg_code AS item_code,  -- Menggunakan mtg_code sebagai item_code agar sesuai dengan sales dan stock
+        mtg_code AS item_code,
         branch_code,
         EXTRACT(YEAR FROM TO_DATE(tgl_order, 'MM/DD/YYYY'))::TEXT AS po_year,
         SUM(CASE WHEN EXTRACT(MONTH FROM TO_DATE(tgl_order, 'MM/DD/YYYY')) = 1 THEN REPLACE(qty_sc_reg, ',', '')::NUMERIC ELSE 0::NUMERIC END) AS beli_januari,
@@ -419,7 +420,7 @@ aggregated_po AS (
     FROM p_o_custs
     GROUP BY dist_code, mtg_code, branch_code, EXTRACT(YEAR FROM TO_DATE(tgl_order, 'MM/DD/YYYY'))
 )
-SELECT
+SELECT DISTINCT -- Added DISTINCT to remove duplicates
     s.tahun,
     s.dist_code,
     s.chnl_code,
@@ -453,6 +454,7 @@ FROM
 LEFT JOIN aggregated_stock st ON s.item_code = st.item_code 
     AND s.dist_code = st.dist_code 
     AND s.kode_cabang = st.kode_cabang
+    AND s.tahun = st.tahun
 LEFT JOIN aggregated_po po ON s.dist_code = po.dist_code 
     AND s.kode_cabang = po.branch_code 
     AND s.item_code = po.item_code

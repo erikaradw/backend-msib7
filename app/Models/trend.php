@@ -500,8 +500,7 @@ FROM trend_with_status
             AND trend_with_status.region_name LIKE :region_name
             AND trend_with_status.chnl_code LIKE :chnl_code
             AND trend_with_status.brand_name LIKE :brand_name
-            AND trend_with_status.status_product LIKE :status_product
-            AND CAST(trend_with_status.tahun AS TEXT) LIKE :tahun)
+            AND trend_with_status.status_product LIKE :status_product)
         LIMIT :limit OFFSET :offset
         ", [
             'selected_year' => $request['tahun'],
@@ -513,7 +512,6 @@ FROM trend_with_status
             'chnl_code' => '%' . $request['chnl_code'] . '%',
             'brand_name' => '%' . $request['brand_name'] . '%',
             'status_product' => '%' . $request['status_product'] . '%',
-            'tahun' => '%' . $request['tahun'] . '%',
             'limit' => $arr_pagination['limit'],
             'offset' => $arr_pagination['offset'],
         ]);
@@ -796,8 +794,7 @@ FROM trend_with_status
         AND trend_with_status.region_name LIKE :region_name
         AND trend_with_status.chnl_code LIKE :chnl_code
         AND trend_with_status.brand_name LIKE :brand_name
-        AND trend_with_status.status_product LIKE :status_product
-        AND CAST(trend_with_status.tahun AS TEXT) LIKE :tahun)
+        AND trend_with_status.status_product LIKE :status_product)
     ", [
             'selected_year' => $request['tahun'],
             'selected_month' => $selected_month,
@@ -807,8 +804,7 @@ FROM trend_with_status
             'region_name' => '%' . $request['region_name'] . '%',
             'chnl_code' => '%' . $request['chnl_code'] . '%',
             'brand_name' => '%' . $request['brand_name'] . '%',
-            'status_product' => '%' . $request['status_product'] . '%',
-            'tahun' => '%' . $request['tahun'] . '%'
+            'status_product' => '%' . $request['status_product'] . '%'
         ]);
     }
 

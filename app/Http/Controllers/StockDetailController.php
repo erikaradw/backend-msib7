@@ -45,13 +45,52 @@ class StockDetailController extends Controller
                 $request->search
             );
             $todos =  (new Stock_Detail())->get_data_($request->search, $arr_pagination);
-            $count = $todos->count();
+            $count = (new Stock_Detail())->count_data_($request->search);
+            
         }
         return response()->json(
             (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
             200
         );
     }
+
+    public function deletefilterstockdetail(Request $request)
+    {
+        // Validasi input
+        $this->validate($request, [
+            'dist_code' => 'required',
+            'tahun' => 'required',
+            'bulan' => 'required'
+        ]);
+
+        try {
+            // Data filter
+            $dist_code = $request->input('dist_code');
+            $tahun = $request->input('tahun');
+            $bulan = $request->input('bulan');
+
+            // Hapus data berdasarkan filter
+            $deletedRows = DB::table('stock__details')
+                ->where('dist_code', $dist_code)
+                ->where('tahun', $tahun)
+                ->where('bulan', $bulan)
+                ->delete();
+
+            // Response sukses
+            return response()->json([
+                'status' => true,
+                'message' => 'Data deleted successfully.',
+                'deleted_rows' => $deletedRows
+            ]);
+        } catch (\Exception $e) {
+            // Response gagal
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request): JsonResponse
     {
         DB::beginTransaction();

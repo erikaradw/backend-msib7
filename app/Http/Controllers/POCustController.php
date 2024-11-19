@@ -42,13 +42,98 @@ class POCustController extends Controller
                 $request->search
             );
             $todos =  (new POCust())->get_data_($request->search, $arr_pagination);
-            $count = $todos->count();
+            $count = (new POCust())->count_data_($request->search);
         }
         return response()->json(
             (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
             200
         );
     }
+
+    // public function paging(Request $request): JsonResponse
+    // {
+    //     $URL = URL::current();
+    //     $sortColumn = $request->get('sort', 'tgl_order');
+    //     $sortOrder = $request->get('order', 'asc');
+
+    //     $validSortColumns = ['dist_code', 'tgl_order', 'mtg_code', 'qty_sc_reg', 'qty_po', 'branch_code'];
+    //     if (!in_array($sortColumn, $validSortColumns)) {
+    //         $sortColumn = 'tgl_order';
+    //     }
+    //     if (!in_array(strtolower($sortOrder), ['asc', 'desc'])) {
+    //         $sortOrder = 'asc';
+    //     }
+
+    //     if (!isset($request->search)) {
+    //         $query = (new POCust())->orderBy($sortColumn, $sortOrder);
+    //         $count = $query->count();
+    //         $arr_pagination = (new PublicModel())->pagination_without_search(
+    //             $URL,
+    //             $request->limit,
+    //             $request->offset
+    //         );
+    //         $todos = $query->skip($arr_pagination['offset'])->take($arr_pagination['limit'])->get();
+    //     } else {
+    //         $search = $request->search;
+    //         $query = (new POCust())
+    //             ->where('dist_code', 'LIKE', "%$search%")
+    //             ->orWhere('tgl_order', 'LIKE', "%$search%")
+    //             ->orWhere('mtg_code', 'LIKE', "%$search%")
+    //             ->orderBy($sortColumn, $sortOrder);
+    //         $count = $query->count();
+    //         $arr_pagination = (new PublicModel())->pagination_with_search(
+    //             $URL,
+    //             $request->limit,
+    //             $request->offset,
+    //             $request->search
+    //         );
+    //         $todos = $query->skip($arr_pagination['offset'])->take($arr_pagination['limit'])->get();
+    //     }
+
+    //     return response()->json(
+    //         (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
+    //         200
+    //     );
+    // }
+
+    public function deletefilterpocust(Request $request)
+    {
+        // Validasi input
+        $this->validate($request, [
+            'dist_code' => 'required',
+            'tahun' => 'required',
+            'bulan' => 'required'
+        ]);
+
+        try {
+            // Data filter
+            $dist_code = $request->input('dist_code');
+            $tahun = $request->input('tahun');
+            $bulan = $request->input('bulan');
+
+            // Hapus data berdasarkan filter (dengan parsing bulan dan tahun dari tgl_order)
+            $deletedRows = DB::table('p_o_custs')
+                ->where('dist_code', $dist_code)
+                ->whereRaw("EXTRACT(YEAR FROM TO_DATE(tgl_order, 'MM-DD-YYYY')) = ?", [$tahun])
+                ->whereRaw("EXTRACT(MONTH FROM TO_DATE(tgl_order, 'MM-DD-YYYY')) = ?", [$bulan])
+                ->delete();
+
+            // Response sukses
+            return response()->json([
+                'status' => true,
+                'message' => 'Data deleted successfully.',
+                'deleted_rows' => $deletedRows
+            ]);
+        } catch (\Exception $e) {
+            // Response gagal
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
     public function store(Request $request): JsonResponse
     {
         DB::beginTransaction();
@@ -147,7 +232,7 @@ class POCustController extends Controller
             ], 403);
         }
     }
-    
+
     public function destroy(Request $request): JsonResponse
     {
         $user_id = 'USER TEST';

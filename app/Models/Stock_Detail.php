@@ -52,7 +52,7 @@ class Stock_Detail extends Model
             OR lower(on_hand_unit) like '%$search%' ) 
             AND deleted_by IS NULL
         ")
-            ->select('id', 'tahun', 'bulan', 'dist_code','kode_cabang', 'brch_name', 'item_code', 'on_hand_unit')
+            ->select('id', 'tahun', 'bulan', 'dist_code', 'kode_cabang', 'brch_name', 'item_code', 'on_hand_unit')
             ->offset($arr_pagination['offset'])
             ->limit($arr_pagination['limit'])
             ->orderBy('id', 'ASC')
@@ -60,6 +60,34 @@ class Stock_Detail extends Model
 
         return $data;
     }
+
+    public function count_data_($search)
+    {
+        // Jika ada pencarian, reset offset pagination ke 0
+        if (!empty($search)) {
+            $arr_pagination['offset'] = 0;
+        }
+
+        $search = strtolower($search);
+
+        // Query dengan pencarian dan paginasi
+        $data = Stock_Detail::whereRaw("
+             (lower(tahun) like '%$search%'
+            OR lower(bulan) like '%$search%'
+            OR lower(dist_code) like '%$search%'
+            OR lower(kode_cabang) like '%$search%'
+            OR lower(brch_name) like '%$search%'  
+            OR lower(item_code) like '%$search%'  
+            OR lower(on_hand_unit) like '%$search%' ) 
+            AND deleted_by IS NULL
+        ")
+            ->select('id', 'tahun', 'bulan', 'dist_code', 'kode_cabang', 'brch_name', 'item_code', 'on_hand_unit')
+            ->orderBy('id', 'ASC')
+            ->count();
+
+        return $data;
+    }
+
     public function insertBulk(Request $request): JsonResponse
     {
         $csvData = $request->input('csv');

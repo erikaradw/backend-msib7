@@ -79,6 +79,8 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->put('pocust/{id}', 'POCustController@update');
     $router->delete('pocustdelete', 'POCustController@deleteAll');
     $router->post('pocustinsertBulk', 'POCustController@insertBulk');
+    $router->delete('deletefilterpocust', 'POCustController@deletefilterpocust');
+
 
     // ROUTES STOCK DETAIL
     $router->get('stockdetail', 'StockDetailController@paging');
@@ -88,6 +90,8 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->put('stockdetail/{id}', 'StockDetailController@update');
     $router->delete('stockdetaildelete', 'StockDetailController@deleteAll');
     $router->post('stockdetailinsertBulk', 'StockDetailController@insertBulk');
+    $router->delete('deletefilterstockdetail', 'StockDetailController@deletefilterstockdetail');
+
 
     // ROUTES SALES UNIT
     $router->get('salesunit', 'SalesUnitController@paging');
@@ -97,6 +101,7 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->delete('salesunit', 'SalesUnitController@destroy');
     $router->delete('salesunitdelete', 'SalesUnitController@deleteAll');
     $router->post('salesunitinsertBulk', 'SalesUnitController@insertBulk');
+    $router->delete('deletefiltersalesunit', 'SalesUnitController@deletefiltersalesunit');
 
     // ROUTES TREND
     $router->get('trend', 'TrendController@paging');

@@ -55,4 +55,29 @@ class POCust extends Model
 
         return $data;
     }
+    public function count_data_($search)
+    {
+        // Jika ada pencarian, reset offset pagination ke 0
+        if (!empty($search)) {
+            $arr_pagination['offset'] = 0;
+        }
+
+        $search = strtolower($search);
+
+        // Query dengan pencarian dan paginasi
+        $data = POCust::whereRaw("
+            (lower(dist_code) like '%$search%'
+            OR lower(tgl_order) like '%$search%'
+            OR lower(mtg_code) like '%$search%'
+            OR lower(qty_sc_reg) like '%$search%'
+            OR lower(qty_po) like '%$search%'
+            OR lower(branch_code) like '%$search%') 
+            AND deleted_by IS NULL
+        ")
+            ->select('id', 'dist_code', 'tgl_order', 'mtg_code', 'qty_sc_reg', 'qty_po', 'branch_code')
+            ->orderBy('id', 'ASC')
+            ->count();
+
+        return $data;
+    }
 }
