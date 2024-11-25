@@ -80,6 +80,8 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->delete('pocustdelete', 'POCustController@deleteAll');
     $router->post('pocustinsertBulk', 'POCustController@insertBulk');
     $router->delete('deletefilterpocust', 'POCustController@deletefilterpocust');
+    $router->get('fetchFilteredDataPOCust', 'POCustController@fetchFilteredDataPOCust');
+    $router->delete('po/hapus-banyak-data', 'POCustController@hapusBanyakDataPOCust');
 
 
     // ROUTES STOCK DETAIL
@@ -91,6 +93,9 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->delete('stockdetaildelete', 'StockDetailController@deleteAll');
     $router->post('stockdetailinsertBulk', 'StockDetailController@insertBulk');
     $router->delete('deletefilterstockdetail', 'StockDetailController@deletefilterstockdetail');
+    $router->get('fetchFilteredDataStockDetail', 'StockDetailController@fetchFilteredDataStockDetail');
+    $router->get('stockdetailgetAll', 'StockDetailController@getAll');
+    $router->delete('stock/hapus-banyak-data', 'StockDetailController@hapusBanyakData');
 
 
     // ROUTES SALES UNIT
@@ -102,6 +107,9 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->delete('salesunitdelete', 'SalesUnitController@deleteAll');
     $router->post('salesunitinsertBulk', 'SalesUnitController@insertBulk');
     $router->delete('deletefiltersalesunit', 'SalesUnitController@deletefiltersalesunit');
+    $router->get('fetchFilteredData', 'SalesUnitController@fetchFilteredData');
+    $router->delete('salesunit/hapus-banyak-data', 'SalesUnitController@hapusBanyakDataSalesUnit');
+
 
     // ROUTES TREND
     $router->get('trend', 'TrendController@paging');
@@ -113,6 +121,7 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->get('/monthly-sales-data', ['uses' => 'TrendController@getMonthlySalesData']);
     $router->delete('trenddelete', 'TrendController@deleteAll');
     $router->get('/upsertTrends', 'TrendController@upsertTrends');
+    $router->get('/grafikTrend', 'TrendController@grafikTrend');
 
     $router->get('trend_g', 'TrendGController@paging');
     $router->post('trend_g', 'TrendGController@store');
