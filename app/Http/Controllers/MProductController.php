@@ -24,18 +24,21 @@ class MProductController extends Controller
     {
         $this->judul_halaman_notif = 'MASTER PRODUCT';
     }
-
     public function paging(Request $request): JsonResponse
     {
         $URL = URL::current();
-        if (!isset($request->search)) {
-            $count = (new M_Product())->count();
-            $arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset);
-            $todos = (new M_Product())->get_data_($request->search, $arr_pagination);
+        $limit = $request->limit ?? 10;
+        $offset = $request->offset ?? 0;
+        $search = $request->search ?? null;
+
+        $arr_pagination = (new PublicModel())->pagination_without_search($URL, $limit, $offset, $search);
+
+        if (!empty($search)) {
+            $todos = (new M_Product())->get_data_($search, $arr_pagination);
+            $count = (new M_Product())->count_data_($search); // Hanya hitung total data untuk search
         } else {
-            $arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset, $request->search);
-            $todos = (new M_Product())->get_data_($request->search, $arr_pagination);
-            $count = $todos->count();
+            $todos = (new M_Product())->get_data_(null, $arr_pagination);
+            $count = (new M_Product())->count(); // Hitung semua data
         }
 
         return response()->json(
@@ -43,6 +46,25 @@ class MProductController extends Controller
             200
         );
     }
+
+    // public function paging(Request $request): JsonResponse
+    // {
+    //     $URL = URL::current();
+    //     if (!isset($request->search)) {
+    //         $count = (new M_Product())->count();
+    //         $arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset);
+    //         $todos = (new M_Product())->get_data_($request->search, $arr_pagination);
+    //     } else {
+    //         $arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset, $request->search);
+    //         $todos = (new M_Product())->get_data_($request->search, $arr_pagination);
+    //         $count = (new M_Product())->count_data_($request->search, $request);
+    //     }
+
+    //     return response()->json(
+    //         (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
+    //         200
+    //     );
+    // }
 
     public function getData()
     {

@@ -21,17 +21,20 @@ class M_Kategori extends Model
     {
         return $date->format('Y-m-d H:i:s');
     }
-
     public function get_data_($search, $arr_pagination)
     {
+        $query = M_Kategori::whereNull('deleted_by');
+
+        // Tambahkan kondisi pencarian jika search term ada
         if (!empty($search)) {
-            $arr_pagination['offset'] = 0;
+            $search = strtolower($search);
+            $query->whereRaw("(lower(parent_code) like '%$search%' OR 
+                              lower(item_name) like '%$search%' OR 
+                              lower(kategori) like '%$search%')");
         }
 
-        // Pastikan pencarian dilakukan sesuai dengan struktur database kamu
-        $search = strtolower($search);
-        $data = M_Kategori::whereRaw("(lower(parent_code) like '%$search%' OR lower(item_name) like '%$search%' OR lower(kategori) like '%$search%') AND deleted_by is NULL")
-            ->select('id', 'parent_code', 'item_name', 'kategori')
+        // Ambil data sesuai dengan limit dan offset
+        $data = $query->select('id', 'parent_code', 'item_name', 'kategori')
             ->offset($arr_pagination['offset'])
             ->limit($arr_pagination['limit'])
             ->orderBy('id', 'ASC')
@@ -39,4 +42,54 @@ class M_Kategori extends Model
 
         return $data;
     }
+
+    public function count_data_($search)
+    {
+        $query = M_Kategori::whereNull('deleted_by');
+
+        // Tambahkan kondisi pencarian jika search term ada
+        if (!empty($search)) {
+            $search = strtolower($search);
+            $query->whereRaw("(lower(parent_code) like '%$search%' OR 
+                              lower(item_name) like '%$search%' OR 
+                              lower(kategori) like '%$search%')");
+        }
+
+        // Hitung total data berdasarkan kondisi
+        $count = $query->count();
+
+        return $count;
+    }
+    // public function get_data_($search, $arr_pagination)
+    // {
+    //     if (!empty($search)) {
+    //         $arr_pagination['offset'] = 0;
+    //     }
+
+    //     // Pastikan pencarian dilakukan sesuai dengan struktur database kamu
+    //     $search = strtolower($search);
+    //     $data = M_Kategori::whereRaw("(lower(parent_code) like '%$search%' OR lower(item_name) like '%$search%' OR lower(kategori) like '%$search%') AND deleted_by is NULL")
+    //         ->select('id', 'parent_code', 'item_name', 'kategori')
+    //         ->offset($arr_pagination['offset'])
+    //         ->limit($arr_pagination['limit'])
+    //         ->orderBy('id', 'ASC')
+    //         ->get();
+
+    //     return $data;
+    // }
+    // public function count_data_($search, $arr_pagination)
+    // {
+    //     if (!empty($search)) {
+    //         $arr_pagination['offset'] = 0;
+    //     }
+
+    //     // Pastikan pencarian dilakukan sesuai dengan struktur database kamu
+    //     $search = strtolower($search);
+    //     $data = M_Kategori::whereRaw("(lower(parent_code) like '%$search%' OR lower(item_name) like '%$search%' OR lower(kategori) like '%$search%') AND deleted_by is NULL")
+    //         ->select('id', 'parent_code', 'item_name', 'kategori')
+    //         ->orderBy('id', 'ASC')
+    //         ->count();
+
+    //     return $data;
+    // }
 }

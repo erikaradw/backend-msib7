@@ -32,28 +32,33 @@ class Stock_Detail extends Model
      * @param array $arr_pagination
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function get_data_($search, $arr_pagination)
-    {
-        // Jika ada pencarian, reset offset pagination ke 0
-        if (!empty($search)) {
-            $arr_pagination['offset'] = 0;
-        }
 
+    public function get_data_($search, $arr_pagination, $request)
+    {
         $search = strtolower($search);
 
         // Query dengan pencarian dan paginasi
         $data = Stock_Detail::whereRaw("
-            (lower(tahun) like '%$search%'
-            OR lower(bulan) like '%$search%'
-            OR lower(dist_code) like '%$search%'
-            OR lower(kode_cabang) like '%$search%'
-            OR lower(brch_name) like '%$search%'  
-            OR lower(item_code) like '%$search%'  
-            OR lower(on_hand_unit) like '%$search%' ) 
-            AND deleted_by IS NULL
-        ")
+        (lower(tahun) like '%$search%'
+        OR lower(bulan) like '%$search%'
+        OR lower(dist_code) like '%$search%'
+        OR lower(kode_cabang) like '%$search%'
+        OR lower(brch_name) like '%$search%'  
+        OR lower(item_code) like '%$search%'  
+        OR lower(on_hand_unit) like '%$search%' ) 
+        AND deleted_by IS NULL
+    ")
+            ->when($request->tahun, function ($query) use ($request) {
+                return $query->where('tahun', 'like', '%' . $request->tahun . '%');
+            })
+            ->when($request->bulan, function ($query) use ($request) {
+                return $query->where('bulan', 'like', '%' . $request->bulan . '%');
+            })
+            ->when($request->dist_code, function ($query) use ($request) {
+                return $query->where('dist_code', 'like', '%' . $request->dist_code . '%');
+            })
             ->select('id', 'tahun', 'bulan', 'dist_code', 'kode_cabang', 'brch_name', 'item_code', 'on_hand_unit')
-            ->offset($arr_pagination['offset'])
+            ->offset($arr_pagination['offset']) // Menghormati offset dari pagination
             ->limit($arr_pagination['limit'])
             ->orderBy('id', 'ASC')
             ->get();
@@ -61,32 +66,96 @@ class Stock_Detail extends Model
         return $data;
     }
 
-    public function count_data_($search)
+    public function count_data_($search, $request)
     {
-        // Jika ada pencarian, reset offset pagination ke 0
-        if (!empty($search)) {
-            $arr_pagination['offset'] = 0;
-        }
-
         $search = strtolower($search);
 
-        // Query dengan pencarian dan paginasi
+        // Query untuk menghitung total data dengan pencarian
         $data = Stock_Detail::whereRaw("
              (lower(tahun) like '%$search%'
-            OR lower(bulan) like '%$search%'
-            OR lower(dist_code) like '%$search%'
-            OR lower(kode_cabang) like '%$search%'
-            OR lower(brch_name) like '%$search%'  
-            OR lower(item_code) like '%$search%'  
-            OR lower(on_hand_unit) like '%$search%' ) 
-            AND deleted_by IS NULL
-        ")
-            ->select('id', 'tahun', 'bulan', 'dist_code', 'kode_cabang', 'brch_name', 'item_code', 'on_hand_unit')
-            ->orderBy('id', 'ASC')
+             OR lower(bulan) like '%$search%'
+             OR lower(dist_code) like '%$search%'
+             OR lower(kode_cabang) like '%$search%'
+             OR lower(brch_name) like '%$search%'  
+             OR lower(item_code) like '%$search%'  
+             OR lower(on_hand_unit) like '%$search%' ) 
+             AND deleted_by IS NULL
+         ")
+            ->when($request->tahun, function ($query) use ($request) {
+                return $query->where('tahun', 'like', '%' . $request->tahun . '%');
+            })
+            ->when($request->bulan, function ($query) use ($request) {
+                return $query->where('bulan', 'like', '%' . $request->bulan . '%');
+            })
+            ->when($request->dist_code, function ($query) use ($request) {
+                return $query->where('dist_code', 'like', '%' . $request->dist_code . '%');
+            })
             ->count();
 
         return $data;
     }
+
+    // public function get_data_($search, $arr_pagination, $request)
+    // {
+    //     // Jika ada pencarian, reset offset pagination ke 0
+    //     if (!empty($search)) {
+    //         $arr_pagination['offset'] = 0;
+    //     }
+
+    //     $search = strtolower($search);
+
+    //     // Query dengan pencarian dan paginasi
+    //     $data = Stock_Detail::whereRaw("
+    //         (lower(tahun) like '%$search%'
+    //         OR lower(bulan) like '%$search%'
+    //         OR lower(dist_code) like '%$search%'
+    //         OR lower(kode_cabang) like '%$search%'
+    //         OR lower(brch_name) like '%$search%'  
+    //         OR lower(item_code) like '%$search%'  
+    //         OR lower(on_hand_unit) like '%$search%' ) 
+    //         AND deleted_by IS NULL
+    //     ")
+    //         ->where('tahun', 'like', '%' . $request->tahun . '%')
+    //         ->where('bulan', 'like', '%' . $request->bulan)
+    //         ->where('dist_code', 'like', '%' . $request->dist_code . '%')
+    //         ->select('id', 'tahun', 'bulan', 'dist_code', 'kode_cabang', 'brch_name', 'item_code', 'on_hand_unit')
+    //         ->offset($arr_pagination['offset'])
+    //         ->limit($arr_pagination['limit'])
+    //         ->orderBy('id', 'ASC')
+    //         ->get();
+
+    //     return $data;
+    // }
+
+    // public function count_data_($search, $request)
+    // {
+    //     // Jika ada pencarian, reset offset pagination ke 0
+    //     if (!empty($search)) {
+    //         $arr_pagination['offset'] = 0;
+    //     }
+
+    //     $search = strtolower($search);
+
+    //     // Query dengan pencarian dan paginasi
+    //     $data = Stock_Detail::whereRaw("
+    //          (lower(tahun) like '%$search%'
+    //         OR lower(bulan) like '%$search%'
+    //         OR lower(dist_code) like '%$search%'
+    //         OR lower(kode_cabang) like '%$search%'
+    //         OR lower(brch_name) like '%$search%'  
+    //         OR lower(item_code) like '%$search%'  
+    //         OR lower(on_hand_unit) like '%$search%' ) 
+    //         AND deleted_by IS NULL
+    //     ")
+    //         ->where('tahun', 'like', '%' . $request->tahun . '%')
+    //         ->where('bulan', 'like', '%' . $request->bulan)
+    //         ->where('dist_code', 'like', '%' . $request->dist_code . '%')
+    //         ->select('id', 'tahun', 'bulan', 'dist_code', 'kode_cabang', 'brch_name', 'item_code', 'on_hand_unit')
+    //         ->orderBy('id', 'ASC')
+    //         ->count();
+
+    //     return $data;
+    // }
 
     public function insertBulk(Request $request): JsonResponse
     {

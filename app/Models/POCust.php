@@ -28,17 +28,12 @@ class POCust extends Model
      * @param array $arr_pagination
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function get_data_($search, $arr_pagination)
+    public function get_data_($search, $arr_pagination, $request)
     {
-        // Jika ada pencarian, reset offset pagination ke 0
-        if (!empty($search)) {
-            $arr_pagination['offset'] = 0;
-        }
-
         $search = strtolower($search);
 
-        // Query dengan pencarian dan paginasi
-        $data = POCust::whereRaw("
+        // Mulai query
+        $query = POCust::whereRaw("
             (lower(dist_code) like '%$search%'
             OR lower(tgl_order) like '%$search%'
             OR lower(mtg_code) like '%$search%'
@@ -46,38 +41,139 @@ class POCust extends Model
             OR lower(qty_po) like '%$search%'
             OR lower(branch_code) like '%$search%') 
             AND deleted_by IS NULL
-        ")
-            ->select('id', 'dist_code', 'tgl_order', 'mtg_code', 'qty_sc_reg', 'qty_po', 'branch_code')
-            ->offset($arr_pagination['offset'])
+        ");
+
+        // Tambahkan filter jika parameter tersedia
+        if (!empty($request->tahun) && is_numeric($request->tahun)) {
+            $query->whereRaw("EXTRACT(YEAR FROM TO_DATE(tgl_order, 'MM/DD/YYYY')) = ?", [$request->tahun]);
+        }
+
+        if (!empty($request->bulan) && is_numeric($request->bulan)) {
+            $query->whereRaw("EXTRACT(MONTH FROM TO_DATE(tgl_order, 'MM/DD/YYYY')) = ?", [$request->bulan]);
+        }
+
+        if (!empty($request->dist_code)) {
+            $query->where('dist_code', 'like', '%' . $request->dist_code . '%');
+        }
+
+        // Eksekusi query dengan paginasi
+        $data = $query->select('id', 'dist_code', 'tgl_order', 'mtg_code', 'qty_sc_reg', 'qty_po', 'branch_code')
+            ->offset($arr_pagination['offset']) // Menghormati nilai offset dari pagination
             ->limit($arr_pagination['limit'])
             ->orderBy('id', 'ASC')
             ->get();
 
         return $data;
     }
-    public function count_data_($search)
-    {
-        // Jika ada pencarian, reset offset pagination ke 0
-        if (!empty($search)) {
-            $arr_pagination['offset'] = 0;
-        }
 
+    public function count_data_($search, $request)
+    {
         $search = strtolower($search);
 
-        // Query dengan pencarian dan paginasi
-        $data = POCust::whereRaw("
-            (lower(dist_code) like '%$search%'
-            OR lower(tgl_order) like '%$search%'
-            OR lower(mtg_code) like '%$search%'
-            OR lower(qty_sc_reg) like '%$search%'
-            OR lower(qty_po) like '%$search%'
-            OR lower(branch_code) like '%$search%') 
-            AND deleted_by IS NULL
-        ")
-            ->select('id', 'dist_code', 'tgl_order', 'mtg_code', 'qty_sc_reg', 'qty_po', 'branch_code')
-            ->orderBy('id', 'ASC')
-            ->count();
+        // Mulai query
+        $query = POCust::whereRaw("
+        (lower(dist_code) like '%$search%'
+        OR lower(tgl_order) like '%$search%'
+        OR lower(mtg_code) like '%$search%'
+        OR lower(qty_sc_reg) like '%$search%'
+        OR lower(qty_po) like '%$search%'
+        OR lower(branch_code) like '%$search%') 
+        AND deleted_by IS NULL
+    ");
+
+        // Tambahkan filter jika parameter tersedia
+        if (!empty($request->tahun) && is_numeric($request->tahun)) {
+            $query->whereRaw("EXTRACT(YEAR FROM TO_DATE(tgl_order, 'MM/DD/YYYY')) = ?", [$request->tahun]);
+        }
+
+        if (!empty($request->bulan) && is_numeric($request->bulan)) {
+            $query->whereRaw("EXTRACT(MONTH FROM TO_DATE(tgl_order, 'MM/DD/YYYY')) = ?", [$request->bulan]);
+        }
+
+        if (!empty($request->dist_code)) {
+            $query->where('dist_code', 'like', '%' . $request->dist_code . '%');
+        }
+
+        // Hitung jumlah data
+        $data = $query->count();
 
         return $data;
     }
+
+    // public function get_data_($search, $arr_pagination, $request)
+    // {
+    //     // Jika ada pencarian, reset offset pagination ke 0
+    //     if (!empty($search)) {
+    //         $arr_pagination['offset'] = 0;
+    //     }
+
+    //     $search = strtolower($search);
+
+    //     // Mulai query
+    //     $query = POCust::whereRaw("
+    //         (lower(dist_code) like '%$search%'
+    //         OR lower(tgl_order) like '%$search%'
+    //         OR lower(mtg_code) like '%$search%'
+    //         OR lower(qty_sc_reg) like '%$search%'
+    //         OR lower(qty_po) like '%$search%'
+    //         OR lower(branch_code) like '%$search%') 
+    //         AND deleted_by IS NULL
+    //     ");
+
+    //     // Tambahkan filter jika parameter tersedia
+    //     if (!empty($request->tahun) && is_numeric($request->tahun)) {
+    //         $query->whereRaw("EXTRACT(YEAR FROM TO_DATE(tgl_order, 'MM/DD/YYYY')) = ?", [$request->tahun]);
+    //     }
+
+    //     if (!empty($request->bulan) && is_numeric($request->bulan)) {
+    //         $query->whereRaw("EXTRACT(MONTH FROM TO_DATE(tgl_order, 'MM/DD/YYYY')) = ?", [$request->bulan]);
+    //     }
+
+    //     if (!empty($request->dist_code)) {
+    //         $query->where('dist_code', 'like', '%' . $request->dist_code . '%');
+    //     }
+
+    //     // Eksekusi query dengan paginasi
+    //     $data = $query->select('id', 'dist_code', 'tgl_order', 'mtg_code', 'qty_sc_reg', 'qty_po', 'branch_code')
+    //         ->offset($arr_pagination['offset'])
+    //         ->limit($arr_pagination['limit'])
+    //         ->orderBy('id', 'ASC')
+    //         ->get();
+
+    //     return $data;
+    // }
+
+    // public function count_data_($search, $request)
+    // {
+    //     $search = strtolower($search);
+
+    //     // Mulai query
+    //     $query = POCust::whereRaw("
+    //     (lower(dist_code) like '%$search%'
+    //     OR lower(tgl_order) like '%$search%'
+    //     OR lower(mtg_code) like '%$search%'
+    //     OR lower(qty_sc_reg) like '%$search%'
+    //     OR lower(qty_po) like '%$search%'
+    //     OR lower(branch_code) like '%$search%') 
+    //     AND deleted_by IS NULL
+    // ");
+
+    //     // Tambahkan filter jika parameter tersedia
+    //     if (!empty($request->tahun) && is_numeric($request->tahun)) {
+    //         $query->whereRaw("EXTRACT(YEAR FROM TO_DATE(tgl_order, 'MM/DD/YYYY')) = ?", [$request->tahun]);
+    //     }
+
+    //     if (!empty($request->bulan) && is_numeric($request->bulan)) {
+    //         $query->whereRaw("EXTRACT(MONTH FROM TO_DATE(tgl_order, 'MM/DD/YYYY')) = ?", [$request->bulan]);
+    //     }
+
+    //     if (!empty($request->dist_code)) {
+    //         $query->where('dist_code', 'like', '%' . $request->dist_code . '%');
+    //     }
+
+    //     // Hitung jumlah data
+    //     $data = $query->count();
+
+    //     return $data;
+    // }
 }

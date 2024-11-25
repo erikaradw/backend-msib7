@@ -30,13 +30,13 @@ class StockDetailController extends Controller
     {
         $URL = URL::current();
         if (!isset($request->search)) {
-            $count =  (new Stock_Detail())->count();
+            $count = (new Stock_Detail())->count_data_($request->search, $request);
             $arr_pagination = (new PublicModel())->pagination_without_search(
                 $URL,
                 $request->limit,
                 $request->offset
             );
-            $todos = (new Stock_Detail())->get_data_($request->search, $arr_pagination);
+            $todos = (new Stock_Detail())->get_data_($request->search, $arr_pagination, $request);
         } else {
             $arr_pagination = (new PublicModel())->pagination_without_search(
                 $URL,
@@ -44,14 +44,72 @@ class StockDetailController extends Controller
                 $request->offset,
                 $request->search
             );
-            $todos =  (new Stock_Detail())->get_data_($request->search, $arr_pagination);
-            $count = (new Stock_Detail())->count_data_($request->search);
-            
+            $todos =  (new Stock_Detail())->get_data_($request->search, $arr_pagination, $request);
+            $count = (new Stock_Detail())->count_data_($request->search, $request);
         }
         return response()->json(
             (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
             200
         );
+    }
+    public function fetchFilteredDataStockDetail(Request $request)
+    {
+        try {
+            // Ambil parameter dari request
+            $distCode = $request->input('dist_code');
+            $tahun = $request->input('tahun');
+            $bulan = $request->input('bulan');
+
+            // Query dasar
+            $query = DB::table('stock__details');
+            if (!empty($distCode)) {
+                $query->where('dist_code', '=', $distCode);
+            }
+            if (!empty($tahun)) {
+                $query->where('tahun', '=', $tahun);
+            }
+            if (!empty($bulan)) {
+                $query->where('bulan', '=', $bulan);
+            }
+
+            $filteredData = $query->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Data fetched successfully',
+                'data' => $filteredData
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to fetch data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    public function getAll(Request $request)
+    {
+        $dist_code = $request->input('dist_code');
+        $tahun = $request->input('tahun');
+        $bulan = $request->input('bulan');
+
+        $query = DB::table('stock__details');
+
+        if ($dist_code) {
+            $query->where('dist_code', $dist_code);
+        }
+        if ($tahun) {
+            $query->where('tahun', $tahun);
+        }
+        if ($bulan) {
+            $query->where('bulan', $bulan);
+        }
+
+        $data = $query->paginate(10); // Pagination 10 data per halaman
+
+        return response()->json([
+            'status' => true,
+            'data' => $data,
+        ]);
     }
 
     public function deletefilterstockdetail(Request $request)
@@ -81,6 +139,34 @@ class StockDetailController extends Controller
                 'status' => true,
                 'message' => 'Data deleted successfully.',
                 'deleted_rows' => $deletedRows
+            ]);
+        } catch (\Exception $e) {
+            // Response gagal
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function hapusBanyakData(Request $request)
+    {
+        $ids = $request->post();
+        try {
+            // $target = Stock_Detail::find($id);
+            $delete = Stock_Detail::whereIn('id', $ids)->delete();
+            if (!$delete) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data not found'
+                ], 404);
+            }
+
+            // $target->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Data deleted successfully.'
             ]);
         } catch (\Exception $e) {
             // Response gagal

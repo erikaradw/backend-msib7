@@ -27,13 +27,13 @@ class POCustController extends Controller
     {
         $URL = URL::current();
         if (!isset($request->search)) {
-            $count =  (new POCust())->count();
+            $count = (new POCust())->count_data_($request->search, $request);
             $arr_pagination = (new PublicModel())->pagination_without_search(
                 $URL,
                 $request->limit,
                 $request->offset
             );
-            $todos = (new POCust())->get_data_($request->search, $arr_pagination);
+            $todos = (new POCust())->get_data_($request->search, $arr_pagination, $request);
         } else {
             $arr_pagination = (new PublicModel())->pagination_without_search(
                 $URL,
@@ -41,60 +41,76 @@ class POCustController extends Controller
                 $request->offset,
                 $request->search
             );
-            $todos =  (new POCust())->get_data_($request->search, $arr_pagination);
-            $count = (new POCust())->count_data_($request->search);
+            $todos =  (new POCust())->get_data_($request->search, $arr_pagination, $request);
+            $count = (new POCust())->count_data_($request->search, $request);
         }
         return response()->json(
             (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
             200
         );
     }
+    public function fetchFilteredDataPOCust(Request $request)
+    {
+        try {
+            // Ambil parameter dari request
+            $distCode = $request->input('dist_code');
+            $tahun = $request->input('tahun');
+            $bulan = $request->input('bulan');
 
-    // public function paging(Request $request): JsonResponse
-    // {
-    //     $URL = URL::current();
-    //     $sortColumn = $request->get('sort', 'tgl_order');
-    //     $sortOrder = $request->get('order', 'asc');
+            // Query dasar
+            $query = DB::table('sales__units');
+            if (!empty($distCode)) {
+                $query->where('dist_code', '=', $distCode);
+            }
+            if (!empty($tahun)) {
+                $query->where('tahun','=', $tahun);
+            }
+            if (!empty($bulan)) {
+                $query->where('bulan','=', $bulan);
+            }
 
-    //     $validSortColumns = ['dist_code', 'tgl_order', 'mtg_code', 'qty_sc_reg', 'qty_po', 'branch_code'];
-    //     if (!in_array($sortColumn, $validSortColumns)) {
-    //         $sortColumn = 'tgl_order';
-    //     }
-    //     if (!in_array(strtolower($sortOrder), ['asc', 'desc'])) {
-    //         $sortOrder = 'asc';
-    //     }
+            $filteredData = $query->get();
 
-    //     if (!isset($request->search)) {
-    //         $query = (new POCust())->orderBy($sortColumn, $sortOrder);
-    //         $count = $query->count();
-    //         $arr_pagination = (new PublicModel())->pagination_without_search(
-    //             $URL,
-    //             $request->limit,
-    //             $request->offset
-    //         );
-    //         $todos = $query->skip($arr_pagination['offset'])->take($arr_pagination['limit'])->get();
-    //     } else {
-    //         $search = $request->search;
-    //         $query = (new POCust())
-    //             ->where('dist_code', 'LIKE', "%$search%")
-    //             ->orWhere('tgl_order', 'LIKE', "%$search%")
-    //             ->orWhere('mtg_code', 'LIKE', "%$search%")
-    //             ->orderBy($sortColumn, $sortOrder);
-    //         $count = $query->count();
-    //         $arr_pagination = (new PublicModel())->pagination_with_search(
-    //             $URL,
-    //             $request->limit,
-    //             $request->offset,
-    //             $request->search
-    //         );
-    //         $todos = $query->skip($arr_pagination['offset'])->take($arr_pagination['limit'])->get();
-    //     }
+            return response()->json([
+                'status' => true,
+                'message' => 'Data fetched successfully',
+                'data' => $filteredData
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to fetch data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
-    //     return response()->json(
-    //         (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
-    //         200
-    //     );
-    // }
+    public function hapusBanyakDataPOCust(Request $request)
+    {
+        $ids = $request->post();
+        try {
+            // $target = Stock_Detail::find($id);
+            $delete = POCust::whereIn('id', $ids)->delete();
+            if (!$delete) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data not found'
+                ], 404);
+            }
+
+            // $target->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Data deleted successfully.'
+            ]);
+        } catch (\Exception $e) {
+            // Response gagal
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function deletefilterpocust(Request $request)
     {

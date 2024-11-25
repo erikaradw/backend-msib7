@@ -26,25 +26,49 @@ class MKategoriController extends Controller
     {
         $this->judul_halaman_notif = 'MASTER AREA';
     }
-
     public function paging(Request $request): JsonResponse
     {
         $URL = URL::current();
-        if (!isset($request->search)) {
-            $count = (new M_Kategori())->count();
-            $arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset);
-            $todos = (new M_Kategori())->get_data_($request->search, $arr_pagination);
+        $limit = $request->limit ?? 10; // Default limit jika tidak diberikan
+        $offset = $request->offset ?? 0; // Default offset jika tidak diberikan
+        $search = $request->search ?? null;
+
+        // Hitung pagination dan data berdasarkan kondisi pencarian
+        if (!empty($search)) {
+            $arr_pagination = (new PublicModel())->pagination_without_search($URL, $limit, $offset, $search);
+            $todos = (new M_Kategori())->get_data_($search, $arr_pagination);
+            $count = (new M_Kategori())->count_data_($search); // Hitung total data berdasarkan search
         } else {
-            $arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset, $request->search);
-            $todos = (new M_Kategori())->get_data_($request->search, $arr_pagination);
-            $count = $todos->count();
+            $arr_pagination = (new PublicModel())->pagination_without_search($URL, $limit, $offset);
+            $todos = (new M_Kategori())->get_data_(null, $arr_pagination);
+            $count = (new M_Kategori())->count(); // Hitung total data tanpa search
         }
 
+        // Mengembalikan response dalam format JSON
         return response()->json(
             (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
             200
         );
     }
+
+    // public function paging(Request $request): JsonResponse
+    // {
+    //     $URL = URL::current();
+    //     if (!isset($request->search)) {
+    //         $count = (new M_Kategori())->count();
+    //         $arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset);
+    //         $todos = (new M_Kategori())->get_data_($request->search, $arr_pagination);
+    //     } else {
+    //         $arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset, $request->search);
+    //         $todos = (new M_Kategori())->get_data_($request->search, $arr_pagination);
+    //         $count = (new M_Kategori())->count_data_($request->search, $request);
+    //     }
+
+    //     return response()->json(
+    //         (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
+    //         200
+    //     );
+    // }
 
     public function getData()
     {

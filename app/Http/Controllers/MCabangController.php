@@ -24,25 +24,51 @@ class MCabangController extends Controller
     {
         $this->judul_halaman_notif = 'MASTER CABANG';
     }
-
     public function paging(Request $request): JsonResponse
     {
         $URL = URL::current();
-        if (!isset($request->search)) {
-            $count = (new M_Cabang())->count();
-            $arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset);
-            $todos = (new M_Cabang())->get_data_($request->search, $arr_pagination);
+        $limit = $request->limit ?? 10; // Default nilai limit
+        $offset = $request->offset ?? 0; // Default nilai offset
+        $search = $request->search ?? null; // Ambil nilai search jika ada
+
+        if (!empty($search)) {
+            // Hitung total data hasil search
+            $count = (new M_Cabang())->count_data_($search);
+            // Ambil data berdasarkan search dan pagination
+            $arr_pagination = (new PublicModel())->pagination_without_search($URL, $limit, $offset, $search);
+            $todos = (new M_Cabang())->get_data_($search, $arr_pagination);
         } else {
-            $arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset, $request->search);
-            $todos = (new M_Cabang())->get_data_($request->search, $arr_pagination);
-            $count = $todos->count();
+            // Hitung total data tanpa search
+            $count = (new M_Cabang())->count();
+            // Ambil data tanpa search
+            $arr_pagination = (new PublicModel())->pagination_without_search($URL, $limit, $offset);
+            $todos = (new M_Cabang())->get_data_(null, $arr_pagination);
         }
 
+        // Kembalikan hasil dalam format JSON
         return response()->json(
             (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
             200
         );
     }
+    // public function paging(Request $request): JsonResponse
+    // {
+    //     $URL = URL::current();
+    //     if (!isset($request->search)) {
+    //         $count = (new M_Cabang())->count();
+    //         $arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset);
+    //         $todos = (new M_Cabang())->get_data_($request->search, $arr_pagination);
+    //     } else {
+    //         $arr_pagination = (new PublicModel())->pagination_without_search($URL, $request->limit, $request->offset, $request->search);
+    //         $todos = (new M_Cabang())->get_data_($request->search, $arr_pagination);
+    //         $count = (new M_Cabang())->count_data_($request->search, $request);
+    //     }
+
+    //     return response()->json(
+    //         (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
+    //         200
+    //     );
+    // }
 
     public function getData()
     {

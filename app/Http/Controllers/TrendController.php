@@ -24,6 +24,25 @@ class TrendController extends Controller
         $this->judul_halaman_notif = 'Trend';
     }
 
+    public function grafikTrend(){
+        $data = trend::select(
+            'nama_cabang',
+            DB::raw('SUM(yearly_average_unit) AS total_yearly_average_unit'),
+            DB::raw('SUM(average_9_month_unit) AS total_9_month_average_unit'),
+            DB::raw('SUM(average_6_month_unit) AS total_6_month_average_unit'),
+            DB::raw('SUM(average_3_month_unit) AS total_3_month_average_unit')
+        )
+        
+        ->groupBy('nama_cabang')
+        ->orderBy('nama_cabang')
+        ->get();
+        return response()->json([
+            'code' => 201,
+            'status' => true,
+            'data' => $data,
+        ], 201);
+    }
+
     public function paging(Request $request): JsonResponse
     {
         $URL = URL::current();

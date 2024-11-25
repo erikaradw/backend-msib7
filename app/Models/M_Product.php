@@ -24,24 +24,82 @@ class M_Product extends Model
     {
         return $date->format('Y-m-d H:i:s');
     }
-
     public function get_data_($search, $arr_pagination)
+{
+    $search = strtolower($search);
+    $data = M_Product::whereRaw(
+        "(lower(brand_code) like '%$search%' OR 
+          lower(brand_name) like '%$search%' OR 
+          lower(parent_code) like '%$search%' OR 
+          lower(item_code) like '%$search%' OR 
+          lower(item_name) like '%$search%' OR 
+          lower(price_code) like '%$search%' OR 
+          lower(price) like '%$search%' OR 
+          lower(status_product) like '%$search%') 
+          AND deleted_by IS NULL"
+    )
+        ->select('id', 'brand_code', 'brand_name', 'parent_code', 'item_code', 'item_name', 'price_code', 'price', 'status_product')
+        ->offset($arr_pagination['offset']) // Jangan reset offset ke 0
+        ->limit($arr_pagination['limit'])
+        ->orderBy('id', 'ASC')
+        ->get();
+
+    return $data;
+}
+
+    public function count_data_($search)
     {
-        if (!empty($search)) {
-            $arr_pagination['offset'] = 0;
-        }
-
-        // Pastikan pencarian dilakukan sesuai dengan struktur database kamu
         $search = strtolower($search);
-        $data = M_Product::whereRaw("(lower(brand_code) like '%$search%' OR lower(brand_name) like '%$search%' OR lower(parent_code) like '%$search%'  OR lower(item_code) like '%$search%' OR lower(item_name) like '%$search%' OR lower(price_code) like '%$search%' OR lower(price) like '%$search%' OR lower(status_product) like '%$search%') AND deleted_by is NULL")
-            ->select('id', 'brand_code', 'brand_name', 'parent_code','item_code', 'item_name', 'price_code', 'price', 'status_product')
-            ->offset($arr_pagination['offset'])
-            ->limit($arr_pagination['limit'])
-            ->orderBy('id', 'ASC')
-            ->get();
-
+        $data = M_Product::whereRaw(
+            "(lower(brand_code) like '%$search%' OR 
+              lower(brand_name) like '%$search%' OR 
+              lower(parent_code) like '%$search%' OR 
+              lower(item_code) like '%$search%' OR 
+              lower(item_name) like '%$search%' OR 
+              lower(price_code) like '%$search%' OR 
+              lower(price) like '%$search%' OR 
+              lower(status_product) like '%$search%') 
+              AND deleted_by IS NULL"
+        )
+            ->count();
+    
         return $data;
     }
+    
+    // public function get_data_($search, $arr_pagination)
+    // {
+    //     if (!empty($search)) {
+    //         $arr_pagination['offset'] = 0;
+    //     }
+
+    //     // Pastikan pencarian dilakukan sesuai dengan struktur database kamu
+    //     $search = strtolower($search);
+    //     $data = M_Product::whereRaw("(lower(brand_code) like '%$search%' OR lower(brand_name) like '%$search%' OR lower(parent_code) like '%$search%'  OR lower(item_code) like '%$search%' OR lower(item_name) like '%$search%' OR lower(price_code) like '%$search%' OR lower(price) like '%$search%' OR lower(status_product) like '%$search%') AND deleted_by is NULL")
+    //         ->select('id', 'brand_code', 'brand_name', 'parent_code', 'item_code', 'item_name', 'price_code', 'price', 'status_product')
+    //         ->offset($arr_pagination['offset'])
+    //         ->limit($arr_pagination['limit'])
+    //         ->orderBy('id', 'ASC')
+    //         ->get();
+
+    //     return $data;
+    // }
+
+    // public function count_data_($search, $arr_pagination)
+    // {
+    //     if (!empty($search)) {
+    //         $arr_pagination['offset'] = 0;
+    //     }
+
+    //     // Pastikan pencarian dilakukan sesuai dengan struktur database kamu
+    //     $search = strtolower($search);
+    //     $data = M_Product::whereRaw("(lower(brand_code) like '%$search%' OR lower(brand_name) like '%$search%' OR lower(parent_code) like '%$search%'  OR lower(item_code) like '%$search%' OR lower(item_name) like '%$search%' OR lower(price_code) like '%$search%' OR lower(price) like '%$search%' OR lower(status_product) like '%$search%') AND deleted_by is NULL")
+    //         ->select('id', 'brand_code', 'brand_name', 'parent_code', 'item_code', 'item_name', 'price_code', 'price', 'status_product')
+    //         ->orderBy('id', 'ASC')
+    //         ->count();
+
+    //     return $data;
+    // }
+
     public function insertBulk(Request $request): JsonResponse
     {
         $csvData = $request->input('csv');
