@@ -122,6 +122,8 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->delete('trenddelete', 'TrendController@deleteAll');
     $router->get('/upsertTrends', 'TrendController@upsertTrends');
     $router->get('/grafikTrend', 'TrendController@grafikTrend');
+    $router->get('/TrendAnalysis', 'TrendController@fetchTrendAnalysis');
+
 
     $router->get('trend_g', 'TrendGController@paging');
     $router->post('trend_g', 'TrendGController@store');

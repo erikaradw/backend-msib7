@@ -24,7 +24,43 @@ class TrendController extends Controller
         $this->judul_halaman_notif = 'Trend';
     }
 
-    public function grafikTrend(){
+    public function getMonthlySalesData(Request $request)
+    {
+        $URL = URL::current();
+
+        // Ambil selected_month dari request, default ke Januari (1) jika tidak disediakan
+        $selected_month = $request->input('selected_month', 1);
+
+        // Ambil selected_year dari request, default ke tahun saat ini jika tidak disediakan
+        $selected_year = $request->input('tahun', date('Y'));
+
+        if (!isset($request->search)) {
+            $count = count((new trend())->countTrendAnalysis($request, $selected_year, $selected_month, $request->search));
+            $arr_pagination = (new PublicModel())->pagination_without_search(
+                $URL,
+                $request->limit,
+                $request->offset
+            );
+            $todos = (new trend())->getTrendAnalysis($request, $selected_year, $selected_month, $request->search, $arr_pagination);
+        } else {
+            $arr_pagination = (new PublicModel())->pagination_without_search(
+                $URL,
+                $request->limit,
+                $request->offset,
+                $request->search
+            );
+            $todos =(new trend())->getTrendAnalysis($selected_year, $selected_month, $request->search, $arr_pagination);
+            $count = count((new trend())->countTrendAnalysis($selected_year, $selected_month, $request->search));
+        }
+
+        return response()->json(
+            (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
+            200
+        );
+    }
+
+    public function grafikTrend()
+    {
         $data = trend::select(
             'nama_cabang',
             DB::raw('SUM(yearly_average_unit) AS total_yearly_average_unit'),
@@ -32,10 +68,10 @@ class TrendController extends Controller
             DB::raw('SUM(average_6_month_unit) AS total_6_month_average_unit'),
             DB::raw('SUM(average_3_month_unit) AS total_3_month_average_unit')
         )
-        
-        ->groupBy('nama_cabang')
-        ->orderBy('nama_cabang')
-        ->get();
+
+            ->groupBy('nama_cabang')
+            ->orderBy('nama_cabang')
+            ->get();
         return response()->json([
             'code' => 201,
             'status' => true,
@@ -568,7 +604,6 @@ class TrendController extends Controller
         }
     }
 
-
     public function getTrendData(Request $request)
     {
         try {
@@ -732,55 +767,6 @@ class TrendController extends Controller
                 'message' => 'failed to update data',
             ], 409);
         }
-    }
-
-    public function getMonthlySalesData(Request $request)
-    {
-        $URL = URL::current();
-
-        // Ambil selected_month dari request, default ke Januari (1) jika tidak disediakan
-        $selected_month = $request->input('selected_month', 1);
-
-        // Ambil selected_year dari request, default ke tahun saat ini jika tidak disediakan
-        $selected_year = $request->input('selected_year', date('Y'));
-
-        if (!isset($request->search)) {
-            $count = count((new trend())->countMonthlySalesData($request->search, $request, $selected_month, $selected_year));
-            $arr_pagination = (new PublicModel())->pagination_without_search(
-                $URL,
-                $request->limit,
-                $request->offset
-            );
-            $todos = (new trend())->getMonthlySalesData($request->search, $request, $arr_pagination, $selected_month, $selected_year);
-        } else {
-            $arr_pagination = (new PublicModel())->pagination_without_search(
-                $URL,
-                $request->limit,
-                $request->offset,
-                $request->search
-            );
-            $todos = (new trend())->getMonthlySalesData($request->search, $request, $arr_pagination, $selected_month, $selected_year);
-            $count = count((new trend())->countMonthlySalesData($request->search, $request, $selected_month, $selected_year));
-        }
-
-        return response()->json(
-            (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
-            200
-        );
-    }
-
-    public function getSalesData(Request $request)
-    {
-        $months = $request->input('months');
-
-        $data = [];
-        foreach ($months as $month) {
-            $data[] = Sales_Unit::whereYear('date', $month['year'])
-                ->whereMonth('date', $month['month'])
-                ->sum('sales');
-        }
-
-        return response()->json($data);
     }
 
     public function upsertTrends(Request $request)
