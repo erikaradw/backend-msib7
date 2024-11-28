@@ -60,32 +60,36 @@ class trend extends Model
             }
 
             $aggregatedSales = DB::table('sales__units as s')
-                ->selectRaw("
-            CAST(s.tahun AS INTEGER) AS tahun,
-            s.item_code,
-            s.dist_code,
-            s.kode_cabang,
-            s.chnl_code,
-            CAST(CASE WHEN s.bulan ~ '^[0-9]+$' THEN s.bulan ELSE NULL END AS INTEGER) AS bulan,
-            SUM(CASE WHEN s.net_sales_unit ~ '^[0-9,]+$' THEN NULLIF(REPLACE(s.net_sales_unit, ',', ''), '')::NUMERIC ELSE 0 END)::INTEGER AS net_sales_unit
-        ")
-                ->whereRaw("s.bulan ~ '^[0-9]+$'")
-                ->groupByRaw("
-            CAST(s.tahun AS INTEGER),
-            s.item_code,
-            s.dist_code,
-            s.kode_cabang,
-            s.chnl_code,
-            CAST(CASE WHEN s.bulan ~ '^[0-9]+$' THEN s.bulan ELSE NULL END AS INTEGER)
-        ");
+            ->selectRaw("
+                CAST(s.tahun AS INTEGER) AS tahun,
+                s.item_code,
+                s.dist_code,
+                s.kode_cabang,
+                s.chnl_code,
+                CAST(CASE WHEN s.bulan ~ '^[0-9]+$' THEN s.bulan ELSE NULL END AS INTEGER) AS bulan,
+                SUM(CASE 
+                    WHEN s.net_sales_unit ~ '^[0-9,]+$' THEN 
+                        NULLIF(REPLACE(s.net_sales_unit, ',', ''), '')::NUMERIC 
+                    ELSE 0 
+                END)::INTEGER AS net_sales_unit
+            ")
+            ->whereRaw("s.bulan ~ '^[0-9]+$'")
+            ->groupByRaw("
+                CAST(s.tahun AS INTEGER),
+                s.item_code,
+                s.dist_code,
+                s.kode_cabang,
+                s.chnl_code,
+                CAST(CASE WHEN s.bulan ~ '^[0-9]+$' THEN s.bulan ELSE NULL END AS INTEGER)
+            ");
 
             $aggregatedStock = DB::table('stock__details as st')
-                ->join('sales__units as su', function ($join) {
-                    $join->on('st.item_code', '=', 'su.item_code')
-                        ->on('st.dist_code', '=', 'su.dist_code')
-                        ->on('st.kode_cabang', '=', 'su.kode_cabang');
-                })
-                ->selectRaw("
+            ->join('sales__units as su', function ($join) {
+                $join->on('st.item_code', '=', 'su.item_code')
+                    ->on('st.dist_code', '=', 'su.dist_code')
+                    ->on('st.kode_cabang', '=', 'su.kode_cabang');
+            })
+            ->selectRaw("
                 st.item_code,
                 st.dist_code,
                 st.kode_cabang,
@@ -93,8 +97,8 @@ class trend extends Model
                     WHEN CAST(su.tahun AS INTEGER) = ? AND CAST(su.bulan AS INTEGER) = ? THEN 
                         CASE WHEN st.on_hand_unit ~ '^[0-9,]+$' THEN NULLIF(REPLACE(st.on_hand_unit, ',', ''), '')::NUMERIC ELSE 0 END
                     ELSE 0 END)::INTEGER AS stock_on_hand_unit
-                ", [$selectedYear, $selectedMonth])
-                ->groupBy('st.item_code', 'st.dist_code', 'st.kode_cabang');
+            ", [$selectedYear, $selectedMonth])
+            ->groupBy('st.item_code', 'st.dist_code', 'st.kode_cabang');        
 
             $poData = DB::table('p_o_custs as po')
                 ->leftJoin('sales__units as su', function ($join) {
@@ -412,32 +416,36 @@ class trend extends Model
             }
 
             $aggregatedSales = DB::table('sales__units as s')
-                ->selectRaw("
-            CAST(s.tahun AS INTEGER) AS tahun,
-            s.item_code,
-            s.dist_code,
-            s.kode_cabang,
-            s.chnl_code,
-            CAST(CASE WHEN s.bulan ~ '^[0-9]+$' THEN s.bulan ELSE NULL END AS INTEGER) AS bulan,
-            SUM(CASE WHEN s.net_sales_unit ~ '^[0-9,]+$' THEN NULLIF(REPLACE(s.net_sales_unit, ',', ''), '')::NUMERIC ELSE 0 END)::INTEGER AS net_sales_unit
-        ")
-                ->whereRaw("s.bulan ~ '^[0-9]+$'")
-                ->groupByRaw("
-            CAST(s.tahun AS INTEGER),
-            s.item_code,
-            s.dist_code,
-            s.kode_cabang,
-            s.chnl_code,
-            CAST(CASE WHEN s.bulan ~ '^[0-9]+$' THEN s.bulan ELSE NULL END AS INTEGER)
-        ");
+            ->selectRaw("
+                CAST(s.tahun AS INTEGER) AS tahun,
+                s.item_code,
+                s.dist_code,
+                s.kode_cabang,
+                s.chnl_code,
+                CAST(CASE WHEN s.bulan ~ '^[0-9]+$' THEN s.bulan ELSE NULL END AS INTEGER) AS bulan,
+                SUM(CASE 
+                    WHEN s.net_sales_unit ~ '^[0-9,]+$' THEN 
+                        NULLIF(REPLACE(s.net_sales_unit, ',', ''), '')::NUMERIC 
+                    ELSE 0 
+                END)::INTEGER AS net_sales_unit
+            ")
+            ->whereRaw("s.bulan ~ '^[0-9]+$'")
+            ->groupByRaw("
+                CAST(s.tahun AS INTEGER),
+                s.item_code,
+                s.dist_code,
+                s.kode_cabang,
+                s.chnl_code,
+                CAST(CASE WHEN s.bulan ~ '^[0-9]+$' THEN s.bulan ELSE NULL END AS INTEGER)
+            ");
 
             $aggregatedStock = DB::table('stock__details as st')
-                ->join('sales__units as su', function ($join) {
-                    $join->on('st.item_code', '=', 'su.item_code')
-                        ->on('st.dist_code', '=', 'su.dist_code')
-                        ->on('st.kode_cabang', '=', 'su.kode_cabang');
-                })
-                ->selectRaw("
+            ->join('sales__units as su', function ($join) {
+                $join->on('st.item_code', '=', 'su.item_code')
+                    ->on('st.dist_code', '=', 'su.dist_code')
+                    ->on('st.kode_cabang', '=', 'su.kode_cabang');
+            })
+            ->selectRaw("
                 st.item_code,
                 st.dist_code,
                 st.kode_cabang,
@@ -445,8 +453,8 @@ class trend extends Model
                     WHEN CAST(su.tahun AS INTEGER) = ? AND CAST(su.bulan AS INTEGER) = ? THEN 
                         CASE WHEN st.on_hand_unit ~ '^[0-9,]+$' THEN NULLIF(REPLACE(st.on_hand_unit, ',', ''), '')::NUMERIC ELSE 0 END
                     ELSE 0 END)::INTEGER AS stock_on_hand_unit
-                ", [$selectedYear, $selectedMonth])
-                ->groupBy('st.item_code', 'st.dist_code', 'st.kode_cabang');
+            ", [$selectedYear, $selectedMonth])
+            ->groupBy('st.item_code', 'st.dist_code', 'st.kode_cabang'); 
 
             $poData = DB::table('p_o_custs as po')
                 ->leftJoin('sales__units as su', function ($join) {
