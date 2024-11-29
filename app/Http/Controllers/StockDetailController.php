@@ -237,45 +237,144 @@ class StockDetailController extends Controller
             ], 500);
         }
     }
-
     public function storeBulky(Request $req): JsonResponse
     {
-        DB::beginTransaction();
+        DB::beginTransaction(); // Mulai transaksi database
         try {
-            $todo = Stock_Detail::where('data_baru', true)->orWhere('data_baru', null);
-            $todo->update(['data_baru' => false]);
-            $user_id = 'USER TEST'; // Sesuaikan dengan ID pengguna yang sebenarnya
-            $data_csv = json_decode(json_encode($req->csv), true);
-            foreach ($data_csv as $key => $value) {
-                $data = array();
-                $data['tahun'] = $value['tahun'];
-                $data['bulan'] = $value['bulan'];
-                $data['dist_code'] = $value['dist_code'];
-                $data['kode_cabang'] = $value['kode_cabang'];
-                $data['brch_name'] = $value['brch_name'];
-                $data['item_code'] = $value['item_code'];
-                $data['on_hand_unit'] = $value['on_hand_unit'];
-                $data['data_baru'] = true;
+            // 1. Cek apakah ada data sebelumnya di database
+            $existingDataCount = Stock_Detail::count();
 
-                $data['created_by'] = $req->userid;
-                $data['updated_by'] = $req->userid;
-                $todos = Stock_Detail::create($data);
+            // 2. Ambil data dari CSV
+            $data_csv = json_decode(json_encode($req->csv), true);
+            $user_id = $req->userid; // ID pengguna dari request
+
+            // 3. Jika tidak ada data sebelumnya, langsung insert semua data
+            if ($existingDataCount === 0) {
+                foreach ($data_csv as $key => $value) {
+                    // Validasi data CSV, pastikan semua kolom wajib diisi
+                    if (
+                        empty($value['tahun']) || empty($value['bulan']) || empty($value['dist_code']) ||
+                        empty($value['kode_cabang']) || empty($value['item_code'])
+                    ) {
+                        Log::warning("Skipped row due to missing required fields:", $value);
+                        continue; // Lewati jika ada kolom wajib yang kosong
+                    }
+
+                    // Data baru yang akan diinsert
+                    $data = [
+                        'tahun' => $value['tahun'],
+                        'bulan' => $value['bulan'],
+                        'dist_code' => $value['dist_code'],
+                        'kode_cabang' => $value['kode_cabang'],
+                        'brch_name' => $value['brch_name'],
+                        'item_code' => $value['item_code'],
+                        'on_hand_unit' => $value['on_hand_unit'],
+                        'data_baru' => true, // Tandai sebagai data baru
+                        'created_by' => $user_id,
+                        'updated_by' => $user_id,
+                    ];
+
+                    // Insert data baru
+                    Stock_Detail::create($data);
+                }
+            } else {
+                // 4. Jika ada data sebelumnya, lakukan update or create
+                Stock_Detail::where('data_baru', true)
+                    ->orWhere('data_baru', null)
+                    ->update(['data_baru' => false]);
+
+                foreach ($data_csv as $key => $value) {
+                    // Validasi data CSV, pastikan semua kolom wajib diisi
+                    if (
+                        empty($value['tahun']) || empty($value['bulan']) || empty($value['dist_code']) ||
+                        empty($value['kode_cabang']) || empty($value['item_code'])
+                    ) {
+                        Log::warning("Skipped row due to missing required fields:", $value);
+                        continue; // Lewati jika ada kolom wajib yang kosong
+                    }
+
+                    // Tentukan atribut unik untuk mencocokkan data di database
+                    $attributes = [
+                        'tahun' => $value['tahun'],
+                        'bulan' => $value['bulan'],
+                        'dist_code' => $value['dist_code'],
+                        'kode_cabang' => $value['kode_cabang'],
+                        'brch_name' => $value['brch_name'],
+                        'item_code' => $value['item_code'],
+                        'on_hand_unit' => $value['on_hand_unit']
+                    ];
+
+                    // Data yang akan diupdate atau diinsert
+                    $values = [
+                        'on_hand_unit' => $value['on_hand_unit'] ?? null,
+                        'data_baru' => true, // Tandai sebagai data baru
+                        'created_by' => $user_id,
+                        'updated_by' => $user_id,
+                    ];
+
+                    Log::info('Processing Attributes:', $attributes);
+                    Log::info('Processing Values:', $values);
+
+                    // Gunakan updateOrCreate untuk insert atau update data
+                    Stock_Detail::updateOrCreate($attributes, $values);
+                }
             }
-            DB::commit();
+
+            DB::commit(); // Commit transaksi jika semua berhasil
             return response()->json([
                 'code' => 201,
                 'status' => true,
-                'message' => 'created successfully',
+                'message' => 'Data created or updated successfully',
             ], 201);
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::rollBack(); // Rollback transaksi jika ada error
+            Log::error('Error in storeBulky:', ['error' => $e->getMessage()]);
             return response()->json([
                 'status' => false,
-                'message' => 'failed to create data',
-                'error' => $e
+                'message' => 'Failed to create or update data',
+                'error' => $e->getMessage(),
             ], 403);
         }
     }
+
+    // public function storeBulky(Request $req): JsonResponse
+    // {
+    //     DB::beginTransaction();
+    //     try {
+    //         $todo = Stock_Detail::where('data_baru', true)->orWhere('data_baru', null);
+    //         $todo->update(['data_baru' => false]);
+    //         $user_id = 'USER TEST'; // Sesuaikan dengan ID pengguna yang sebenarnya
+    //         $data_csv = json_decode(json_encode($req->csv), true);
+    //         foreach ($data_csv as $key => $value) {
+    //             $data = array();
+    //             $data['tahun'] = $value['tahun'];
+    //             $data['bulan'] = $value['bulan'];
+    //             $data['dist_code'] = $value['dist_code'];
+    //             $data['kode_cabang'] = $value['kode_cabang'];
+    //             $data['brch_name'] = $value['brch_name'];
+    //             $data['item_code'] = $value['item_code'];
+    //             $data['on_hand_unit'] = $value['on_hand_unit'];
+    //             $data['data_baru'] = true;
+
+    //             $data['created_by'] = $req->userid;
+    //             $data['updated_by'] = $req->userid;
+    //             $todos = Stock_Detail::create($data);
+    //         }
+    //         DB::commit();
+    //         return response()->json([
+    //             'code' => 201,
+    //             'status' => true,
+    //             'message' => 'created successfully',
+    //         ], 201);
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'failed to create data',
+    //             'error' => $e
+    //         ], 403);
+    //     }
+    // }
 
     public function destroy(Request $request): JsonResponse
     {
