@@ -59,7 +59,7 @@ class trend extends Model
                 $monthYearMap[] = ['month' => $month, 'year' => $year];
             }
 
-            $aggregatedSales = DB::table('sales__units as s')
+            $aggregatedSales = DB::table('vw_sales__units as s')
             ->selectRaw("
                 CAST(s.tahun AS INTEGER) AS tahun,
                 s.item_code,
@@ -87,8 +87,8 @@ class trend extends Model
             ");
 
             // Query Aggregated Stock dengan Validasi
-             $aggregatedStock = DB::table('stock__details as st')
-            ->join('sales__units as su', function ($join) {
+             $aggregatedStock = DB::table('vw_stock__details as st')
+            ->join('vw_sales__units as su', function ($join) {
                 $join->on('st.item_code', '=', 'su.item_code')
                     ->on('st.dist_code', '=', 'su.dist_code')
                     ->on('st.kode_cabang', '=', 'su.kode_cabang');
@@ -110,7 +110,7 @@ class trend extends Model
 
             // Query PO Data dengan Validasi
             $poData = DB::table('p_o_custs as po')
-            ->leftJoin('sales__units as su', function ($join) {
+            ->leftJoin('vw_sales__units as su', function ($join) {
                 $join->on('po.mtg_code', '=', 'su.item_code')
                     ->on('po.dist_code', '=', 'su.dist_code')
                     ->on('po.branch_code', '=', 'su.kode_cabang');
@@ -430,7 +430,7 @@ class trend extends Model
                 $monthYearMap[] = ['month' => $month, 'year' => $year];
             }
 
-            $aggregatedSales = DB::table('sales__units as s')
+            $aggregatedSales = DB::table('vw_sales__units as s')
             ->selectRaw("
                 CAST(s.tahun AS INTEGER) AS tahun,
                 s.item_code,
@@ -457,8 +457,8 @@ class trend extends Model
                 CAST(CASE WHEN s.bulan ~ '^[0-9]+$' THEN s.bulan ELSE NULL END AS INTEGER)
             ");
 
-        $aggregatedStock = DB::table('stock__details as st')
-            ->join('sales__units as su', function ($join) {
+        $aggregatedStock = DB::table('vw_stock__details as st')
+            ->join('vw_sales__units as su', function ($join) {
                 $join->on('st.item_code', '=', 'su.item_code')
                     ->on('st.dist_code', '=', 'su.dist_code')
                     ->on('st.kode_cabang', '=', 'su.kode_cabang');
@@ -479,7 +479,7 @@ class trend extends Model
             ->groupBy('st.item_code', 'st.dist_code', 'st.kode_cabang');
 
             $poData = DB::table('p_o_custs as po')
-            ->leftJoin('sales__units as su', function ($join) {
+            ->leftJoin('vw_sales__units as su', function ($join) {
                 $join->on('po.mtg_code', '=', 'su.item_code')
                     ->on('po.dist_code', '=', 'su.dist_code')
                     ->on('po.branch_code', '=', 'su.kode_cabang');
