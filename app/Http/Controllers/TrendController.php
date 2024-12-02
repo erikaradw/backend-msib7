@@ -24,33 +24,174 @@ class TrendController extends Controller
         $this->judul_halaman_notif = 'Trend';
     }
 
-    public function getMonthlySalesData(Request $request)
+    public function upsertTrends(Request $request)
+    {
+        try {
+            $user_id = auth()->id();
+            $validator = app('validator')->make($request->all(), [
+                'tahun' => 'required|integer',
+                'selected_month' => 'required|integer',
+                'limit' => 'integer|nullable',
+                'offset' => 'integer|nullable',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal.',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            // Ambil parameter request
+            $selectedYear = $request->input('tahun');
+            $selectedMonth = $request->input('selected_month');
+            $search = $request->input('search', '');
+            $pagination = [
+                'limit' => $request->input('limit', 10),
+                'offset' => $request->input('offset', 0),
+            ];
+
+            $trendAnalysis = (new trend)->getTrendAnalysis($request->all(), $selectedYear, $selectedMonth, $search, $pagination);
+
+            if ($trendAnalysis->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada data yang ditemukan untuk dimasukkan ke tabel trends.',
+                ]);
+            }
+
+            DB::beginTransaction();
+            // truncate = 'truncate table trends';
+            foreach ($trendAnalysis as $row) {
+
+                $data = [
+                    'dist_code' => $row->dist_code,
+                    'chnl_code' => $row->chnl_code,
+                    'tahun' => (string) $row->tahun,
+                    'item_code' => $row->item_code,
+                    'region_name' => $row->region_name ?? '',
+                    'area_name' => $row->area_name ?? '',
+                    'nama_cabang' => $row->nama_cabang ?? '',
+                    'parent_code' => $row->parent_code ?? '',
+                    'item_name' => $row->item_name ?? '',
+                    'brand_name' => $row->brand_name ?? '',
+                    'kategori' => $row->kategori ?? '',
+                    'status_product' => $row->status_product ?? '',
+                    'month_1' => is_numeric($row->month_1) ? (int) $row->month_1 : 0,
+                    'month_2' => is_numeric($row->month_2) ? (int) $row->month_2 : 0,
+                    'month_3' => is_numeric($row->month_3) ? (int) $row->month_3 : 0,
+                    'month_4' => is_numeric($row->month_4) ? (int) $row->month_4 : 0,
+                    'month_5' => is_numeric($row->month_5) ? (int) $row->month_5 : 0,
+                    'month_6' => is_numeric($row->month_6) ? (int) $row->month_6 : 0,
+                    'month_7' => is_numeric($row->month_7) ? (int) $row->month_7 : 0,
+                    'month_8' => is_numeric($row->month_8) ? (int) $row->month_8 : 0,
+                    'month_9' => is_numeric($row->month_9) ? (int) $row->month_9 : 0,
+                    'month_10' => is_numeric($row->month_10) ? (int) $row->month_10 : 0,
+                    'month_11' => is_numeric($row->month_11) ? (int) $row->month_11 : 0,
+                    'month_12' => is_numeric($row->month_12) ? (int) $row->month_12 : 0,
+                    'yearly_average_unit' => is_numeric($row->yearly_average_unit) ? (int) $row->yearly_average_unit : 0,
+                    'yearly_average_value' => is_numeric($row->yearly_average_value) ? (float) $row->yearly_average_value : 0,
+                    'average_9_month_unit' => is_numeric($row->average_9_month_unit) ? (int) $row->average_9_month_unit : 0,
+                    'average_9_month_value' => is_numeric($row->average_9_month_value) ? (float) $row->average_9_month_value : 0,
+                    'average_6_month_unit' => is_numeric($row->average_6_month_unit) ? (int) $row->average_6_month_unit : 0,
+                    'average_6_month_value' => is_numeric($row->average_6_month_value) ? (float) $row->average_6_month_value : 0,
+                    'average_3_month_unit' => is_numeric($row->average_3_month_unit) ? (int) $row->average_3_month_unit : 0,
+                    'average_3_month_value' => is_numeric($row->average_3_month_value) ? (float) $row->average_3_month_value : 0,
+                    'purchase_value' => is_numeric($row->purchase_value) ? (int) $row->purchase_value : 0,
+                    'doi_3_month' => is_numeric($row->doi_3_month) ? (int) $row->doi_3_month : 0,
+                    'delta' => is_numeric($row->delta) ? round((float) $row->delta, 2) : 0,
+                    'service_level' => is_numeric($row->service_level) ? round((float) $row->service_level, 2) : 0,
+                    'qty_po' => $row->qty_po ?? 0,
+                    'qty_sc_reg' => $row->qty_sc_reg ?? 0,
+                    'pic' => $row->pic ?? '',
+                    'created_by' => $user_id,
+                    'updated_by' => $user_id,
+                ];
+
+                DB::table('trends')->updateOrInsert(
+                    [
+                        'dist_code' => $row->dist_code,
+                        'item_code' => $row->item_code,
+                        'tahun' => (string) $row->tahun,
+                    ],
+                    $data
+                );
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil dimasukkan atau diperbarui di tabel trends.',
+                'count' => count($trendAnalysis),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'error' => 'Terjadi kesalahan saat menyimpan data ke tabel trends.',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getMonthlySalesDataDownload(Request $request)
     {
         $URL = URL::current();
-
-        // Ambil selected_month dari request, default ke Januari (1) jika tidak disediakan
         $selected_month = $request->input('selected_month', 1);
-
-        // Ambil selected_year dari request, default ke tahun saat ini jika tidak disediakan
         $selected_year = $request->input('tahun', date('Y'));
+        $search = $request->input('search', '');
 
-        if (!isset($request->search)) {
-            $count = count((new trend())->countTrendAnalysis($request, $selected_year, $selected_month, $request->search));
+        if (empty($search)) {
+            $count = count((new trend())->countTrendAnalysis($request, $selected_year, $selected_month, $search));
             $arr_pagination = (new PublicModel())->pagination_without_search(
                 $URL,
                 $request->limit,
                 $request->offset
             );
-            $todos = (new trend())->getTrendAnalysis($request, $selected_year, $selected_month, $request->search, $arr_pagination);
+            $todos = (new trend())->getTrendAnalysisDownload($request, $selected_year, $selected_month, $search, $arr_pagination);
         } else {
             $arr_pagination = (new PublicModel())->pagination_without_search(
                 $URL,
                 $request->limit,
                 $request->offset,
-                $request->search
+                $search
             );
-            $todos =(new trend())->getTrendAnalysis($selected_year, $selected_month, $request->search, $arr_pagination);
-            $count = count((new trend())->countTrendAnalysis($selected_year, $selected_month, $request->search));
+            $todos = (new trend())->getTrendAnalysisDownload($request, $selected_year, $selected_month, $search, $arr_pagination);
+            $count = count((new trend())->countTrendAnalysis($request, $selected_year, $selected_month, $search));
+        }
+
+    
+        return response()->json(
+            (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
+            200
+        );
+    }
+    public function getMonthlySalesData(Request $request)
+    {
+        $URL = URL::current();
+        $selected_month = $request->input('selected_month', 1);
+        $selected_year = $request->input('tahun', date('Y'));
+        $search = $request->input('search', '');
+
+        if (empty($search)) {
+            $count = count((new trend())->countTrendAnalysis($request, $selected_year, $selected_month, $search));
+            $arr_pagination = (new PublicModel())->pagination_without_search(
+                $URL,
+                $request->limit,
+                $request->offset
+            );
+            $todos = (new trend())->getTrendAnalysis($request, $selected_year, $selected_month, $search, $arr_pagination);
+        } else {
+            $arr_pagination = (new PublicModel())->pagination_without_search(
+                $URL,
+                $request->limit,
+                $request->offset,
+                $search
+            );
+            $todos = (new trend())->getTrendAnalysis($request, $selected_year, $selected_month, $search, $arr_pagination);
+            $count = count((new trend())->countTrendAnalysis($request, $selected_year, $selected_month, $search));
         }
 
         return response()->json(
@@ -58,6 +199,41 @@ class TrendController extends Controller
             200
         );
     }
+
+    // public function getMonthlySalesData(Request $request)
+    // {
+    //     $URL = URL::current();
+
+    //     // Ambil selected_month dari request, default ke Januari (1) jika tidak disediakan
+    //     $selected_month = $request->input('selected_month', 1);
+
+    //     // Ambil selected_year dari request, default ke tahun saat ini jika tidak disediakan
+    //     $selected_year = $request->input('tahun', date('Y'));
+
+    //     if (!isset($request->search)) {
+    //         $count = count((new trend())->countTrendAnalysis($request, $selected_year, $selected_month, $request->search));
+    //         $arr_pagination = (new PublicModel())->pagination_without_search(
+    //             $URL,
+    //             $request->limit,
+    //             $request->offset
+    //         );
+    //         $todos = (new trend())->getTrendAnalysis($request, $selected_year, $selected_month, $request->search, $arr_pagination);
+    //     } else {
+    //         $arr_pagination = (new PublicModel())->pagination_without_search(
+    //             $URL,
+    //             $request->limit,
+    //             $request->offset,
+    //             $request->search
+    //         );
+    //         $todos = (new trend())->getTrendAnalysis($selected_year, $selected_month, $request->search, $arr_pagination);
+    //         $count = count((new trend())->countTrendAnalysis($selected_year, $selected_month, $request->search));
+    //     }
+
+    //     return response()->json(
+    //         (new PublicModel())->array_respon_200_table($todos, $count, $arr_pagination),
+    //         200
+    //     );
+    // }
 
     public function grafikTrend()
     {
@@ -769,209 +945,209 @@ class TrendController extends Controller
         }
     }
 
-    public function upsertTrends(Request $request)
-    {
-        try {
-            $user_id = auth()->id(); // Mendapatkan ID pengguna yang login
+    // public function upsertTrends(Request $request)
+    // {
+    //     try {
+    //         $user_id = auth()->id(); // Mendapatkan ID pengguna yang login
 
-            // Jalankan query untuk mengambil data
-            $data = DB::select("
-                WITH aggregated_sales AS (
-                    SELECT 
-                        s.tahun,
-                        s.item_code,
-                        s.dist_code,
-                        s.kode_cabang,
-                        s.chnl_code,
-                        s.bulan,
-                        SUM(REPLACE(s.net_sales_unit, ',', '')::NUMERIC)::INTEGER AS net_sales_unit
-                    FROM sales__units s
-                    GROUP BY s.tahun, s.item_code, s.dist_code, s.kode_cabang, s.chnl_code, s.bulan
-                ),
-                aggregated_stock AS (
-                    SELECT 
-                        st.tahun,
-                        st.item_code,
-                        st.dist_code,
-                        st.kode_cabang,
-                        st.bulan,
-                        SUM(REPLACE(st.on_hand_unit, ',', '')::NUMERIC)::INTEGER AS on_hand_unit
-                    FROM stock__details st
-                    GROUP BY st.tahun, st.item_code, st.dist_code, st.kode_cabang, st.bulan
-                ),
-                aggregated_po AS (
-                    SELECT 
-                        po.dist_code,
-                        po.mtg_code AS item_code,  
-                        po.branch_code AS kode_cabang,
-                        EXTRACT(YEAR FROM TO_DATE(po.tgl_order, 'MM/DD/YYYY'))::TEXT AS po_year,
-                        SUM(REPLACE(po.qty_po, ',', '')::NUMERIC)::INTEGER AS qty_po,
-                        SUM(REPLACE(po.qty_sc_reg, ',', '')::NUMERIC)::INTEGER AS qty_sc_reg
-                    FROM p_o_custs po
-                    GROUP BY po.dist_code, po.mtg_code, po.branch_code, EXTRACT(YEAR FROM TO_DATE(po.tgl_order, 'MM/DD/YYYY'))
-                ),
-                shifted_sales AS (
-                    SELECT
-                        s.tahun,
-                        s.item_code,
-                        s.dist_code,
-                        s.kode_cabang,
-                        s.chnl_code,       
-                        COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 1 THEN s.net_sales_unit END), 0) AS month_1,
-                        COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 2 THEN s.net_sales_unit END), 0) AS month_2,
-                        COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 3 THEN s.net_sales_unit END), 0) AS month_3,
-                        COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 4 THEN s.net_sales_unit END), 0) AS month_4,
-                        COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 5 THEN s.net_sales_unit END), 0) AS month_5,
-                        COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 6 THEN s.net_sales_unit END), 0) AS month_6,
-                        COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 7 THEN s.net_sales_unit END), 0) AS month_7,
-                        COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 8 THEN s.net_sales_unit END), 0) AS month_8,
-                        COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 9 THEN s.net_sales_unit END), 0) AS month_9,
-                        COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 10 THEN s.net_sales_unit END), 0) AS month_10,
-                        COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 11 THEN s.net_sales_unit END), 0) AS month_11,
-                        COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 12 THEN s.net_sales_unit END), 0) AS month_12,
-                        COALESCE(MAX(CASE WHEN CAST(st.bulan AS INTEGER) = 12 THEN st.on_hand_unit END), 0) AS stock_on_hand_unit
-                    FROM aggregated_sales s
-                    LEFT JOIN aggregated_stock st 
-                        ON s.item_code = st.item_code 
-                        AND s.dist_code = st.dist_code 
-                        AND s.kode_cabang = st.kode_cabang
-                        AND s.tahun = st.tahun
-                        AND s.bulan = st.bulan
-                    GROUP BY 
-                        s.tahun, s.item_code, s.dist_code, s.kode_cabang, s.chnl_code
-                ),
-                trend_calculation AS (
-                    SELECT 
-                        ss.*,
-                        po.qty_po,
-                        po.qty_sc_reg,
-                        uc.brand_code,
-                        uc.brand_name,
-                        uc.parent_code,
-                        uc.item_name,
-                        NULLIF(REPLACE(uc.price, ',', ''), '')::NUMERIC AS price,
-                        uc.status_product,
-                        mk.kategori,
-                        mcb.region_name,
-                        mcb.area_code,
-                        mcb.area_name,
-                        mcb.nama_cabang,
-                        ROUND((COALESCE(ss.month_1, 0) + COALESCE(ss.month_2, 0) + COALESCE(ss.month_3, 0) +
-                            COALESCE(ss.month_4, 0) + COALESCE(ss.month_5, 0) + COALESCE(ss.month_6, 0) +
-                            COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
-                            COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 12)::INTEGER AS yearly_average_unit,
-                        ROUND((COALESCE(ss.month_1, 0) + COALESCE(ss.month_2, 0) + COALESCE(ss.month_3, 0) +
-                            COALESCE(ss.month_4, 0) + COALESCE(ss.month_5, 0) + COALESCE(ss.month_6, 0) +
-                            COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
-                            COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 12)::INTEGER AS average_sales,
-                        ROUND(((COALESCE(ss.month_1, 0) + COALESCE(ss.month_2, 0) + COALESCE(ss.month_3, 0) +
-                            COALESCE(ss.month_4, 0) + COALESCE(ss.month_5, 0) + COALESCE(ss.month_6, 0) +
-                            COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
-                            COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 12 * 
-                            NULLIF(REPLACE(uc.price, ',', ''), '')::NUMERIC))::INTEGER AS yearly_average_value,
-                        ROUND((COALESCE(ss.month_4, 0) + COALESCE(ss.month_5, 0) + COALESCE(ss.month_6, 0) +
-                            COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
-                            COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 9)::INTEGER AS average_9_month_unit,
-                        ROUND(((COALESCE(ss.month_4, 0) + COALESCE(ss.month_5, 0) + COALESCE(ss.month_6, 0) +
-                            COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
-                            COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 9 *
-                            NULLIF(REPLACE(uc.price, ',', ''), '')::NUMERIC))::INTEGER AS average_9_month_value,
-                        ROUND((COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
-                            COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 6)::INTEGER AS average_6_month_unit,
-                        ROUND(((COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
-                            COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 6 *
-                            NULLIF(REPLACE(uc.price, ',', ''), '')::NUMERIC))::INTEGER AS average_6_month_value,
-                        ROUND((COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 3)::INTEGER AS average_3_month_unit,
-                        ROUND(((COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 3 *
-                            NULLIF(REPLACE(uc.price, ',', ''), '')::NUMERIC))::INTEGER AS average_3_month_value,
-                        CASE
-                            WHEN (COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 3 = 0 THEN 0
-                            ELSE ROUND(COALESCE(ss.stock_on_hand_unit, 0) / ((COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 3) * 30)::INTEGER
-                        END AS doi_3_month,
-                        ROUND((po.qty_sc_reg::NUMERIC / NULLIF(po.qty_po, 0)) * 100, 2)::NUMERIC AS service_level
-                    FROM shifted_sales ss
-                    LEFT JOIN aggregated_po po 
-                        ON ss.dist_code = po.dist_code
-                        AND ss.kode_cabang = po.kode_cabang
-                        AND ss.item_code = po.item_code
-                        AND ss.tahun = po.po_year
-                    JOIN m__products uc 
-                        ON ss.item_code = uc.item_code
-                    LEFT JOIN m__kategoris mk 
-                        ON uc.parent_code = mk.parent_code
-                    LEFT JOIN m__cabangs mcb
-                        ON ss.kode_cabang = mcb.kode_cabang
-                )
-                SELECT * FROM trend_calculation;
-            ");
+    //         // Jalankan query untuk mengambil data
+    //         $data = DB::select("
+    //             WITH aggregated_sales AS (
+    //                 SELECT 
+    //                     s.tahun,
+    //                     s.item_code,
+    //                     s.dist_code,
+    //                     s.kode_cabang,
+    //                     s.chnl_code,
+    //                     s.bulan,
+    //                     SUM(REPLACE(s.net_sales_unit, ',', '')::NUMERIC)::INTEGER AS net_sales_unit
+    //                 FROM sales__units s
+    //                 GROUP BY s.tahun, s.item_code, s.dist_code, s.kode_cabang, s.chnl_code, s.bulan
+    //             ),
+    //             aggregated_stock AS (
+    //                 SELECT 
+    //                     st.tahun,
+    //                     st.item_code,
+    //                     st.dist_code,
+    //                     st.kode_cabang,
+    //                     st.bulan,
+    //                     SUM(REPLACE(st.on_hand_unit, ',', '')::NUMERIC)::INTEGER AS on_hand_unit
+    //                 FROM stock__details st
+    //                 GROUP BY st.tahun, st.item_code, st.dist_code, st.kode_cabang, st.bulan
+    //             ),
+    //             aggregated_po AS (
+    //                 SELECT 
+    //                     po.dist_code,
+    //                     po.mtg_code AS item_code,  
+    //                     po.branch_code AS kode_cabang,
+    //                     EXTRACT(YEAR FROM TO_DATE(po.tgl_order, 'MM/DD/YYYY'))::TEXT AS po_year,
+    //                     SUM(REPLACE(po.qty_po, ',', '')::NUMERIC)::INTEGER AS qty_po,
+    //                     SUM(REPLACE(po.qty_sc_reg, ',', '')::NUMERIC)::INTEGER AS qty_sc_reg
+    //                 FROM p_o_custs po
+    //                 GROUP BY po.dist_code, po.mtg_code, po.branch_code, EXTRACT(YEAR FROM TO_DATE(po.tgl_order, 'MM/DD/YYYY'))
+    //             ),
+    //             shifted_sales AS (
+    //                 SELECT
+    //                     s.tahun,
+    //                     s.item_code,
+    //                     s.dist_code,
+    //                     s.kode_cabang,
+    //                     s.chnl_code,       
+    //                     COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 1 THEN s.net_sales_unit END), 0) AS month_1,
+    //                     COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 2 THEN s.net_sales_unit END), 0) AS month_2,
+    //                     COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 3 THEN s.net_sales_unit END), 0) AS month_3,
+    //                     COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 4 THEN s.net_sales_unit END), 0) AS month_4,
+    //                     COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 5 THEN s.net_sales_unit END), 0) AS month_5,
+    //                     COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 6 THEN s.net_sales_unit END), 0) AS month_6,
+    //                     COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 7 THEN s.net_sales_unit END), 0) AS month_7,
+    //                     COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 8 THEN s.net_sales_unit END), 0) AS month_8,
+    //                     COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 9 THEN s.net_sales_unit END), 0) AS month_9,
+    //                     COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 10 THEN s.net_sales_unit END), 0) AS month_10,
+    //                     COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 11 THEN s.net_sales_unit END), 0) AS month_11,
+    //                     COALESCE(MAX(CASE WHEN CAST(s.bulan AS INTEGER) = 12 THEN s.net_sales_unit END), 0) AS month_12,
+    //                     COALESCE(MAX(CASE WHEN CAST(st.bulan AS INTEGER) = 12 THEN st.on_hand_unit END), 0) AS stock_on_hand_unit
+    //                 FROM aggregated_sales s
+    //                 LEFT JOIN aggregated_stock st 
+    //                     ON s.item_code = st.item_code 
+    //                     AND s.dist_code = st.dist_code 
+    //                     AND s.kode_cabang = st.kode_cabang
+    //                     AND s.tahun = st.tahun
+    //                     AND s.bulan = st.bulan
+    //                 GROUP BY 
+    //                     s.tahun, s.item_code, s.dist_code, s.kode_cabang, s.chnl_code
+    //             ),
+    //             trend_calculation AS (
+    //                 SELECT 
+    //                     ss.*,
+    //                     po.qty_po,
+    //                     po.qty_sc_reg,
+    //                     uc.brand_code,
+    //                     uc.brand_name,
+    //                     uc.parent_code,
+    //                     uc.item_name,
+    //                     NULLIF(REPLACE(uc.price, ',', ''), '')::NUMERIC AS price,
+    //                     uc.status_product,
+    //                     mk.kategori,
+    //                     mcb.region_name,
+    //                     mcb.area_code,
+    //                     mcb.area_name,
+    //                     mcb.nama_cabang,
+    //                     ROUND((COALESCE(ss.month_1, 0) + COALESCE(ss.month_2, 0) + COALESCE(ss.month_3, 0) +
+    //                         COALESCE(ss.month_4, 0) + COALESCE(ss.month_5, 0) + COALESCE(ss.month_6, 0) +
+    //                         COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
+    //                         COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 12)::INTEGER AS yearly_average_unit,
+    //                     ROUND((COALESCE(ss.month_1, 0) + COALESCE(ss.month_2, 0) + COALESCE(ss.month_3, 0) +
+    //                         COALESCE(ss.month_4, 0) + COALESCE(ss.month_5, 0) + COALESCE(ss.month_6, 0) +
+    //                         COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
+    //                         COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 12)::INTEGER AS average_sales,
+    //                     ROUND(((COALESCE(ss.month_1, 0) + COALESCE(ss.month_2, 0) + COALESCE(ss.month_3, 0) +
+    //                         COALESCE(ss.month_4, 0) + COALESCE(ss.month_5, 0) + COALESCE(ss.month_6, 0) +
+    //                         COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
+    //                         COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 12 * 
+    //                         NULLIF(REPLACE(uc.price, ',', ''), '')::NUMERIC))::INTEGER AS yearly_average_value,
+    //                     ROUND((COALESCE(ss.month_4, 0) + COALESCE(ss.month_5, 0) + COALESCE(ss.month_6, 0) +
+    //                         COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
+    //                         COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 9)::INTEGER AS average_9_month_unit,
+    //                     ROUND(((COALESCE(ss.month_4, 0) + COALESCE(ss.month_5, 0) + COALESCE(ss.month_6, 0) +
+    //                         COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
+    //                         COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 9 *
+    //                         NULLIF(REPLACE(uc.price, ',', ''), '')::NUMERIC))::INTEGER AS average_9_month_value,
+    //                     ROUND((COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
+    //                         COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 6)::INTEGER AS average_6_month_unit,
+    //                     ROUND(((COALESCE(ss.month_7, 0) + COALESCE(ss.month_8, 0) + COALESCE(ss.month_9, 0) +
+    //                         COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 6 *
+    //                         NULLIF(REPLACE(uc.price, ',', ''), '')::NUMERIC))::INTEGER AS average_6_month_value,
+    //                     ROUND((COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 3)::INTEGER AS average_3_month_unit,
+    //                     ROUND(((COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 3 *
+    //                         NULLIF(REPLACE(uc.price, ',', ''), '')::NUMERIC))::INTEGER AS average_3_month_value,
+    //                     CASE
+    //                         WHEN (COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 3 = 0 THEN 0
+    //                         ELSE ROUND(COALESCE(ss.stock_on_hand_unit, 0) / ((COALESCE(ss.month_10, 0) + COALESCE(ss.month_11, 0) + COALESCE(ss.month_12, 0)) / 3) * 30)::INTEGER
+    //                     END AS doi_3_month,
+    //                     ROUND((po.qty_sc_reg::NUMERIC / NULLIF(po.qty_po, 0)) * 100, 2)::NUMERIC AS service_level
+    //                 FROM shifted_sales ss
+    //                 LEFT JOIN aggregated_po po 
+    //                     ON ss.dist_code = po.dist_code
+    //                     AND ss.kode_cabang = po.kode_cabang
+    //                     AND ss.item_code = po.item_code
+    //                     AND ss.tahun = po.po_year
+    //                 JOIN m__products uc 
+    //                     ON ss.item_code = uc.item_code
+    //                 LEFT JOIN m__kategoris mk 
+    //                     ON uc.parent_code = mk.parent_code
+    //                 LEFT JOIN m__cabangs mcb
+    //                     ON ss.kode_cabang = mcb.kode_cabang
+    //             )
+    //             SELECT * FROM trend_calculation;
+    //         ");
 
-            DB::beginTransaction();
+    //         DB::beginTransaction();
 
-            foreach ($data as $row) {
-                // Prepare data for insert
-                $insertData = [
-                    'dist_code' => $row->dist_code,
-                    'chnl_code' => $row->chnl_code,
-                    'tahun' => $row->tahun,
-                    'item_code' => $row->item_code,
-                    'region_name' => $row->region_name ?? '',
-                    'area_name' => $row->area_name ?? '',
-                    'nama_cabang' => $row->nama_cabang ?? '',
-                    'parent_code' => $row->parent_code ?? '',
-                    'item_name' => $row->item_name ?? '',
-                    'brand_name' => $row->brand_name ?? '',
-                    'kategori' => $row->kategori ?? '',
-                    'status_product' => $row->status_product ?? '',
-                    'month_1' => $row->month_1 ?? 0,
-                    'month_2' => $row->month_2 ?? 0,
-                    'month_3' => $row->month_3 ?? 0,
-                    'month_4' => $row->month_4 ?? 0,
-                    'month_5' => $row->month_5 ?? 0,
-                    'month_6' => $row->month_6 ?? 0,
-                    'month_7' => $row->month_7 ?? 0,
-                    'month_8' => $row->month_8 ?? 0,
-                    'month_9' => $row->month_9 ?? 0,
-                    'month_10' => $row->month_10 ?? 0,
-                    'month_11' => $row->month_11 ?? 0,
-                    'month_12' => $row->month_12 ?? 0,
-                    'yearly_average_unit' => $row->yearly_average_unit ?? 0,
-                    'yearly_average_value' => $row->yearly_average_value ?? 0,
-                    'average_9_month_unit' => $row->average_9_month_unit ?? 0,
-                    'average_9_month_value' => $row->average_9_month_value ?? 0,
-                    'average_6_month_unit' => $row->average_6_month_unit ?? 0,
-                    'average_6_month_value' => $row->average_6_month_value ?? 0,
-                    'average_3_month_unit' => $row->average_3_month_unit ?? 0,
-                    'average_3_month_value' => $row->average_3_month_value ?? 0,
-                    'average_sales' => $row->average_sales ?? 0,
-                    'purchase_suggestion' => $row->purchase_suggestion ?? 0,
-                    'purchase_value' => $row->purchase_value ?? 0,
-                    'stock_on_hand_unit' => $row->stock_on_hand_unit ?? 0,
-                    'doi_3_month' => $row->doi_3_month ?? 0,
-                    'status_trend' => $row->status_trend ?? '',
-                    'delta' => $row->delta ?? 0,
-                    'qty_po' => $row->qty_po ?? 0,
-                    'qty_sc_reg' => $row->qty_sc_reg ?? 0,
-                    'service_level' => $row->service_level ?? 0,
-                    'pic' => $row->pic ?? '',
-                    'created_by' => $user_id,
-                    'updated_by' => $user_id,
-                ];
+    //         foreach ($data as $row) {
+    //             // Prepare data for insert
+    //             $insertData = [
+    //                 'dist_code' => $row->dist_code,
+    //                 'chnl_code' => $row->chnl_code,
+    //                 'tahun' => $row->tahun,
+    //                 'item_code' => $row->item_code,
+    //                 'region_name' => $row->region_name ?? '',
+    //                 'area_name' => $row->area_name ?? '',
+    //                 'nama_cabang' => $row->nama_cabang ?? '',
+    //                 'parent_code' => $row->parent_code ?? '',
+    //                 'item_name' => $row->item_name ?? '',
+    //                 'brand_name' => $row->brand_name ?? '',
+    //                 'kategori' => $row->kategori ?? '',
+    //                 'status_product' => $row->status_product ?? '',
+    //                 'month_1' => $row->month_1 ?? 0,
+    //                 'month_2' => $row->month_2 ?? 0,
+    //                 'month_3' => $row->month_3 ?? 0,
+    //                 'month_4' => $row->month_4 ?? 0,
+    //                 'month_5' => $row->month_5 ?? 0,
+    //                 'month_6' => $row->month_6 ?? 0,
+    //                 'month_7' => $row->month_7 ?? 0,
+    //                 'month_8' => $row->month_8 ?? 0,
+    //                 'month_9' => $row->month_9 ?? 0,
+    //                 'month_10' => $row->month_10 ?? 0,
+    //                 'month_11' => $row->month_11 ?? 0,
+    //                 'month_12' => $row->month_12 ?? 0,
+    //                 'yearly_average_unit' => $row->yearly_average_unit ?? 0,
+    //                 'yearly_average_value' => $row->yearly_average_value ?? 0,
+    //                 'average_9_month_unit' => $row->average_9_month_unit ?? 0,
+    //                 'average_9_month_value' => $row->average_9_month_value ?? 0,
+    //                 'average_6_month_unit' => $row->average_6_month_unit ?? 0,
+    //                 'average_6_month_value' => $row->average_6_month_value ?? 0,
+    //                 'average_3_month_unit' => $row->average_3_month_unit ?? 0,
+    //                 'average_3_month_value' => $row->average_3_month_value ?? 0,
+    //                 'average_sales' => $row->average_sales ?? 0,
+    //                 'purchase_suggestion' => $row->purchase_suggestion ?? 0,
+    //                 'purchase_value' => $row->purchase_value ?? 0,
+    //                 'stock_on_hand_unit' => $row->stock_on_hand_unit ?? 0,
+    //                 'doi_3_month' => $row->doi_3_month ?? 0,
+    //                 'status_trend' => $row->status_trend ?? '',
+    //                 'delta' => $row->delta ?? 0,
+    //                 'qty_po' => $row->qty_po ?? 0,
+    //                 'qty_sc_reg' => $row->qty_sc_reg ?? 0,
+    //                 'service_level' => $row->service_level ?? 0,
+    //                 'pic' => $row->pic ?? '',
+    //                 'created_by' => $user_id,
+    //                 'updated_by' => $user_id,
+    //             ];
 
-                DB::table('trends')->insert($insertData);
-            }
+    //             DB::table('trends')->insert($insertData);
+    //         }
 
-            DB::commit();
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil dimasukkan ke tabel trends.',
-                'count' => count($data)
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'error' => 'Database error during insert',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
+    //         DB::commit();
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Data berhasil dimasukkan ke tabel trends.',
+    //             'count' => count($data)
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         return response()->json([
+    //             'error' => 'Database error during insert',
+    //             'message' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
 }
