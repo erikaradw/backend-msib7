@@ -119,6 +119,7 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->put('trend/{id}', 'TrendController@update');
     $router->get('trendSelectData', ['uses' => 'TrendController@getSelectData']);
     $router->get('/monthly-sales-data', ['uses' => 'TrendController@getMonthlySalesData']);
+    $router->get('/monthly-sales-data-download', ['uses' => 'TrendController@getMonthlySalesDataDownload']);
     $router->delete('trenddelete', 'TrendController@deleteAll');
     $router->get('/upsertTrends', 'TrendController@upsertTrends');
     $router->get('/grafikTrend', 'TrendController@grafikTrend');
