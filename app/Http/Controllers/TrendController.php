@@ -24,118 +24,6 @@ class TrendController extends Controller
         $this->judul_halaman_notif = 'Trend';
     }
 
-    public function upsertTrends(Request $request)
-    {
-        try {
-            $user_id = auth()->id();
-            $validator = app('validator')->make($request->all(), [
-                'tahun' => 'required|integer',
-                'selected_month' => 'required|integer',
-                'limit' => 'integer|nullable',
-                'offset' => 'integer|nullable',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal.',
-                    'errors' => $validator->errors(),
-                ], 422);
-            }
-
-            // Ambil parameter request
-            $selectedYear = $request->input('tahun');
-            $selectedMonth = $request->input('selected_month');
-            $search = $request->input('search', '');
-            $pagination = [
-                'limit' => $request->input('limit', 10),
-                'offset' => $request->input('offset', 0),
-            ];
-
-            $trendAnalysis = (new trend)->getTrendAnalysis($request->all(), $selectedYear, $selectedMonth, $search, $pagination);
-
-            if ($trendAnalysis->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Tidak ada data yang ditemukan untuk dimasukkan ke tabel trends.',
-                ]);
-            }
-
-            DB::beginTransaction();
-            // truncate = 'truncate table trends';
-            foreach ($trendAnalysis as $row) {
-
-                $data = [
-                    'dist_code' => $row->dist_code,
-                    'chnl_code' => $row->chnl_code,
-                    'tahun' => (string) $row->tahun,
-                    'item_code' => $row->item_code,
-                    'region_name' => $row->region_name ?? '',
-                    'area_name' => $row->area_name ?? '',
-                    'nama_cabang' => $row->nama_cabang ?? '',
-                    'parent_code' => $row->parent_code ?? '',
-                    'item_name' => $row->item_name ?? '',
-                    'brand_name' => $row->brand_name ?? '',
-                    'kategori' => $row->kategori ?? '',
-                    'status_product' => $row->status_product ?? '',
-                    'month_1' => is_numeric($row->month_1) ? (int) $row->month_1 : 0,
-                    'month_2' => is_numeric($row->month_2) ? (int) $row->month_2 : 0,
-                    'month_3' => is_numeric($row->month_3) ? (int) $row->month_3 : 0,
-                    'month_4' => is_numeric($row->month_4) ? (int) $row->month_4 : 0,
-                    'month_5' => is_numeric($row->month_5) ? (int) $row->month_5 : 0,
-                    'month_6' => is_numeric($row->month_6) ? (int) $row->month_6 : 0,
-                    'month_7' => is_numeric($row->month_7) ? (int) $row->month_7 : 0,
-                    'month_8' => is_numeric($row->month_8) ? (int) $row->month_8 : 0,
-                    'month_9' => is_numeric($row->month_9) ? (int) $row->month_9 : 0,
-                    'month_10' => is_numeric($row->month_10) ? (int) $row->month_10 : 0,
-                    'month_11' => is_numeric($row->month_11) ? (int) $row->month_11 : 0,
-                    'month_12' => is_numeric($row->month_12) ? (int) $row->month_12 : 0,
-                    'yearly_average_unit' => is_numeric($row->yearly_average_unit) ? (int) $row->yearly_average_unit : 0,
-                    'yearly_average_value' => is_numeric($row->yearly_average_value) ? (float) $row->yearly_average_value : 0,
-                    'average_9_month_unit' => is_numeric($row->average_9_month_unit) ? (int) $row->average_9_month_unit : 0,
-                    'average_9_month_value' => is_numeric($row->average_9_month_value) ? (float) $row->average_9_month_value : 0,
-                    'average_6_month_unit' => is_numeric($row->average_6_month_unit) ? (int) $row->average_6_month_unit : 0,
-                    'average_6_month_value' => is_numeric($row->average_6_month_value) ? (float) $row->average_6_month_value : 0,
-                    'average_3_month_unit' => is_numeric($row->average_3_month_unit) ? (int) $row->average_3_month_unit : 0,
-                    'average_3_month_value' => is_numeric($row->average_3_month_value) ? (float) $row->average_3_month_value : 0,
-                    'purchase_value' => is_numeric($row->purchase_value) ? (int) $row->purchase_value : 0,
-                    'doi_3_month' => is_numeric($row->doi_3_month) ? (int) $row->doi_3_month : 0,
-                    'delta' => is_numeric($row->delta) ? round((float) $row->delta, 2) : 0,
-                    'service_level' => is_numeric($row->service_level) ? round((float) $row->service_level, 2) : 0,
-                    'qty_po' => $row->qty_po ?? 0,
-                    'qty_sc_reg' => $row->qty_sc_reg ?? 0,
-                    'pic' => $row->pic ?? '',
-                    'created_by' => $user_id,
-                    'updated_by' => $user_id,
-                ];
-
-                DB::table('trends')->updateOrInsert(
-                    [
-                        'dist_code' => $row->dist_code,
-                        'item_code' => $row->item_code,
-                        'tahun' => (string) $row->tahun,
-                    ],
-                    $data
-                );
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil dimasukkan atau diperbarui di tabel trends.',
-                'count' => count($trendAnalysis),
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'error' => 'Terjadi kesalahan saat menyimpan data ke tabel trends.',
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
     public function getMonthlySalesDataDownload(Request $request)
     {
         $URL = URL::current();
@@ -150,6 +38,12 @@ class TrendController extends Controller
                 $request->limit,
                 $request->offset
             );
+
+            // return response()->json([
+            //     'code' => 201,
+            //     'status' => $arr_pagination,
+            //     'message' => 'created successfully',
+            // ], 201);
             $todos = (new trend())->getTrendAnalysisDownload($request, $selected_year, $selected_month, $search, $arr_pagination);
         } else {
             $arr_pagination = (new PublicModel())->pagination_without_search(
