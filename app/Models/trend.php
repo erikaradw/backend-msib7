@@ -31,11 +31,11 @@ class trend extends Model
      * @return \Illuminate\Database\Eloquent\Collection
      */
 
-    public function getTrendAnalysisDownload($request, $selectedYear, $selectedMonth, $search = '', $pagination )
+    public function getTrendAnalysisDownload($request, $selectedYear, $selectedMonth, $search = '', $pagination)
     {
-        try {   
+        try {
             // return $pagination['offset'];
-            if ( $pagination['offset'] ==0){
+            if ($pagination['offset'] == 0) {
                 DB::beginTransaction();
 
                 // Ambil semua data dari getTrendAnalysis tanpa limit dan offset
@@ -45,83 +45,81 @@ class trend extends Model
                 ]);
 
                 // return count($finalDataResult);
-    
-    
-                
+
                 $dataCount = $finalDataResult->count();
                 Log::info("Jumlah total data dari getTrendAnalysis: {$dataCount}");
-    
+
                 if ($dataCount < 550) {
                     Log::warning("Jumlah data yang ditemukan ({$dataCount}) kurang dari target (550).");
                 }
-    
+
                 // Mulai transaksi database
                 DB::select("TRUNCATE TABLE trends");
-                // DB::transaction(function () use ($finalDataResult, $dataCount) {
-                    Log::info('Memulai transaksi untuk truncate dan insert data ke tabel trends.');
-    
-                    // Hapus semua data di tabel trends menggunakan TRUNCATE
-                    // if ($pagination['offset']==0){
-                        
-                    //     DB::select("TRUNCATE TABLE trends");
-                    // }
-                    Log::info('Tabel trends berhasil di-TRUNCATE.');
-    
-                    // Proses memasukkan data ke dalam tabel trends
-                    foreach ($finalDataResult as $row) {
-                        
-                        $data = [
-                            'dist_code' => $row->dist_code,
-                            'chnl_code' => $row->chnl_code,
-                            'tahun' => (string) $row->tahun,
-                            'item_code' => $row->item_code,
-                            'region_name' => $row->region_name ?? '',
-                            'area_name' => $row->area_name ?? '',
-                            'nama_cabang' => $row->nama_cabang ?? '',
-                            'parent_code' => $row->parent_code ?? '',
-                            'item_name' => $row->item_name ?? '',
-                            'brand_name' => $row->brand_name ?? '',
-                            'kategori' => $row->kategori ?? '',
-                            'status_product' => $row->status_product ?? '',
-                            'month_1' => is_numeric($row->month_1) ? (int) $row->month_1 : 0,
-                            'month_2' => is_numeric($row->month_2) ? (int) $row->month_2 : 0,
-                            'month_3' => is_numeric($row->month_3) ? (int) $row->month_3 : 0,
-                            'month_4' => is_numeric($row->month_4) ? (int) $row->month_4 : 0,
-                            'month_5' => is_numeric($row->month_5) ? (int) $row->month_5 : 0,
-                            'month_6' => is_numeric($row->month_6) ? (int) $row->month_6 : 0,
-                            'month_7' => is_numeric($row->month_7) ? (int) $row->month_7 : 0,
-                            'month_8' => is_numeric($row->month_8) ? (int) $row->month_8 : 0,
-                            'month_9' => is_numeric($row->month_9) ? (int) $row->month_9 : 0,
-                            'month_10' => is_numeric($row->month_10) ? (int) $row->month_10 : 0,
-                            'month_11' => is_numeric($row->month_11) ? (int) $row->month_11 : 0,
-                            'month_12' => is_numeric($row->month_12) ? (int) $row->month_12 : 0,
-                            'yearly_average_unit' => is_numeric($row->yearly_average_unit) ? (int) $row->yearly_average_unit : 0,
-                            'average_9_month_unit' => is_numeric($row->average_9_month_unit) ? (int) $row->average_9_month_unit : 0,
-                            'average_6_month_unit' => is_numeric($row->average_6_month_unit) ? (int) $row->average_6_month_unit : 0,
-                            'average_3_month_unit' => is_numeric($row->average_3_month_unit) ? (int) $row->average_3_month_unit : 0,
-                            'purchase_value' => is_numeric($row->purchase_value) ? (float) $row->purchase_value : 0,
-                            'doi_3_month' => is_numeric($row->doi_3_month) ? (int) $row->doi_3_month : 0,
-                            'delta' => is_string($row->delta) ? (float)str_replace('%', '', $row->delta) : $row->delta,
-                            'qty_po' => $row->qty_po ?? 0,
-                            'service_level' => is_string($row->service_level) ? (float)str_replace('%', '', $row->service_level) : $row->service_level,
-                            'qty_sc_reg' => $row->qty_sc_reg ?? 0,
-                            'pic' => $row->pic ?? '',
-                        ];
-    
-                        // Masukkan data ke tabel trends
-                        DB::table('trends')->insert($data);
-                    }
-    
-                    Log::info('Data berhasil diinsert ke tabel trends.');
-                // });
-    
-    
+
+                Log::info('Memulai transaksi untuk truncate dan insert data ke tabel trends.');
+                Log::info('Tabel trends berhasil di-TRUNCATE.');
+
+                // Proses memasukkan data ke dalam tabel trends
+                foreach ($finalDataResult as $row) {
+
+                    $data = [
+                        'dist_code' => $row->dist_code,
+                        'chnl_code' => $row->chnl_code,
+                        'tahun' => (string) $row->tahun,
+                        'item_code' => $row->item_code,
+                        'region_name' => $row->region_name ?? '',
+                        'area_name' => $row->area_name ?? '',
+                        'nama_cabang' => $row->nama_cabang ?? '',
+                        'parent_code' => $row->parent_code ?? '',
+                        'item_name' => $row->item_name ?? '',
+                        'brand_name' => $row->brand_name ?? '',
+                        'kategori' => $row->kategori ?? '',
+                        'status_product' => $row->status_product ?? '',
+                        'month_1' => is_numeric($row->month_1) ? (int) $row->month_1 : 0,
+                        'month_2' => is_numeric($row->month_2) ? (int) $row->month_2 : 0,
+                        'month_3' => is_numeric($row->month_3) ? (int) $row->month_3 : 0,
+                        'month_4' => is_numeric($row->month_4) ? (int) $row->month_4 : 0,
+                        'month_5' => is_numeric($row->month_5) ? (int) $row->month_5 : 0,
+                        'month_6' => is_numeric($row->month_6) ? (int) $row->month_6 : 0,
+                        'month_7' => is_numeric($row->month_7) ? (int) $row->month_7 : 0,
+                        'month_8' => is_numeric($row->month_8) ? (int) $row->month_8 : 0,
+                        'month_9' => is_numeric($row->month_9) ? (int) $row->month_9 : 0,
+                        'month_10' => is_numeric($row->month_10) ? (int) $row->month_10 : 0,
+                        'month_11' => is_numeric($row->month_11) ? (int) $row->month_11 : 0,
+                        'month_12' => is_numeric($row->month_12) ? (int) $row->month_12 : 0,
+                        'yearly_average_unit' => is_numeric($row->yearly_average_unit) ? (int) $row->yearly_average_unit : 0,
+                        'yearly_average_value' => (int) str_replace([',', '.'], '', $row->yearly_average_value),
+                        'average_9_month_unit' => is_numeric($row->average_9_month_unit) ? (int) $row->average_9_month_unit : 0,
+                        'average_9_month_value' => is_numeric($row->average_9_month_value) ? (int) $row->average_9_month_value : 0,
+                        'average_6_month_unit' => is_numeric($row->average_6_month_unit) ? (int) $row->average_6_month_unit : 0,
+                        'average_6_month_value' => is_numeric($row->average_6_month_value) ? (int) $row->average_6_month_value : 0,
+                        'average_3_month_unit' => is_numeric($row->average_3_month_unit) ? (int) $row->average_3_month_unit : 0,
+                        'average_3_month_value' => is_numeric($row->average_3_month_value) ? (int) $row->average_3_month_value : 0,
+                        'average_sales' => is_numeric($row->average_sales) ? (int) $row->average_sales : 0,
+                        'purchase_suggestion' => is_numeric($row->purchase_suggestion) ? (int) $row->purchase_suggestion : 0,
+                        'purchase_value' => is_numeric($row->purchase_value) ? (int) ceil($row->purchase_value) : 0,
+                        'stock_on_hand_unit' => is_numeric($row->stock_on_hand_unit) ? (int) $row->stock_on_hand_unit : 0,
+                        'doi_3_month' => is_numeric($row->doi_3_month) ? (int) $row->doi_3_month : 0,
+                        'status_trend' => is_string($row->status_trend) ? (float)str_replace('%', '', $row->status_trend) : $row->status_trend,
+                        'delta' => is_string($row->delta) ? (float)str_replace('%', '', $row->delta) : $row->delta,
+                        'qty_po' => $row->qty_po ?? 0,
+                        'service_level' => is_string($row->service_level) ? (float)str_replace('%', '', $row->service_level) : $row->service_level,
+                        'qty_sc_reg' => $row->qty_sc_reg ?? 0,
+                        'pic' => $row->pic ?? '',
+                    ];
+
+                    // Masukkan data ke tabel trends
+                    DB::table('trends')->insert($data);
+                }
+
+                Log::info('Data berhasil diinsert ke tabel trends.');
+
                 DB::commit();
             }
-           
+
             // Ambil data dari tabel trends untuk hasil akhir
             $result = DB::table('trends')
-            ->offset($pagination['offset'])->limit($pagination['limit'])->get();
+                ->offset($pagination['offset'])->limit($pagination['limit'])->get();
             Log::info('Proses selesai. Data di tabel trends berhasil diambil.');
 
             return $result;
