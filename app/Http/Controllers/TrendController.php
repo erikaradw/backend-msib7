@@ -148,7 +148,27 @@ class TrendController extends Controller
             'data' => $data,
         ], 201);
     }
-
+    
+    public function grafikTrendByBrand()
+    {
+        $data = trend::select(
+            'brand_name',
+            DB::raw('SUM(yearly_average_unit) AS total_yearly_average_unit'),
+            DB::raw('SUM(average_9_month_unit) AS total_9_month_average_unit'),
+            DB::raw('SUM(average_6_month_unit) AS total_6_month_average_unit'),
+            DB::raw('SUM(average_3_month_unit) AS total_3_month_average_unit')
+        )
+            ->groupBy('brand_name')
+            ->orderBy('brand_name')
+            ->get();
+    
+        return response()->json([
+            'code' => 201,
+            'status' => true,
+            'data' => $data,
+        ], 201);
+    }
+    
     public function paging(Request $request): JsonResponse
     {
         $URL = URL::current();
