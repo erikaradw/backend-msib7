@@ -82,7 +82,7 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->delete('deletefilterpocust', 'POCustController@deletefilterpocust');
     $router->get('fetchFilteredDataPOCust', 'POCustController@fetchFilteredDataPOCust');
     $router->delete('po/hapus-banyak-data', 'POCustController@hapusBanyakDataPOCust');
-
+    $router->post('pocustBulky', 'POCustController@storeBulky');
 
     // ROUTES STOCK DETAIL
     $router->get('stockdetail', 'StockDetailController@paging');
@@ -96,6 +96,7 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->get('fetchFilteredDataStockDetail', 'StockDetailController@fetchFilteredDataStockDetail');
     $router->get('stockdetailgetAll', 'StockDetailController@getAll');
     $router->delete('stock/hapus-banyak-data', 'StockDetailController@hapusBanyakData');
+    $router->post('stockdetailBulky', 'StockDetailController@storeBulky');
 
 
     // ROUTES SALES UNIT
@@ -109,7 +110,7 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->delete('deletefiltersalesunit', 'SalesUnitController@deletefiltersalesunit');
     $router->get('fetchFilteredData', 'SalesUnitController@fetchFilteredData');
     $router->delete('salesunit/hapus-banyak-data', 'SalesUnitController@hapusBanyakDataSalesUnit');
-
+    $router->post('salesunitBulky', 'SalesUnitController@storeBulky');
 
     // ROUTES TREND
     $router->get('trend', 'TrendController@paging');
@@ -123,9 +124,10 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->delete('trenddelete', 'TrendController@deleteAll');
     $router->get('/upsertTrends', 'TrendController@upsertTrends');
     $router->get('/grafikTrend', 'TrendController@grafikTrend');
+    $router->get('/grafikTrendByBrand', 'TrendController@grafikTrendByBrand');
     $router->get('/TrendAnalysis', 'TrendController@fetchTrendAnalysis');
 
-
+    // ROUTES TREND WAREHOUSE
     $router->get('trend_g', 'TrendGController@paging');
     $router->post('trend_g', 'TrendGController@store');
     $router->delete('trend_g/{id}', 'TrendGController@destroy');
@@ -209,9 +211,6 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->post('stdBulky', 'StdController@storeBulky');
     $router->post('basobaBulky', 'BasobaController@storeBulky');
     $router->post('trendBulky', 'TrendController@storeBulky');
-    $router->post('pocustBulky', 'POCustController@storeBulky');
-    $router->post('stockdetailBulky', 'StockDetailController@storeBulky');
-    $router->post('salesunitBulky', 'SalesUnitController@storeBulky');
     $router->post('MItempricehistoryBulky', 'MItempricehistoryController@storeBulky');
     $router->post('M_BrandBulky', 'MBrandController@storeBulky');
     $router->post('M_AreaBulky', 'MAreaController@storeBulky');

@@ -211,6 +211,126 @@ class POCustController extends Controller
         }
     }
 
+    //kode baru
+    // public function storeBulky(Request $req): JsonResponse
+    // {
+    //     DB::beginTransaction();
+    //     try {
+    //         $key_x = $req->key_x ?? 'onprocess';
+
+    //         Log::info("Proses batch dengan key_x: {$key_x}");
+
+    //         if ($key_x === 'start') {
+    //             DB::statement("TRUNCATE TABLE temp_p_o_custs RESTART IDENTITY");
+    //             Log::info("Tabel temporary dikosongkan (start).");
+    //         }
+
+    //         $existingDataCount = POCust::count();
+
+    //         $data_csv = json_decode(json_encode($req->data), true);
+    //         $user_id = $req->userid;
+
+    //         if ($existingDataCount === 0) {
+    //             foreach ($data_csv as $key => $value) {
+
+    //                 $data = [
+    //                     'dist_code' => $value['dist_code'],
+    //                     'tgl_order' => $value['tgl_order'],
+    //                     'mtg_code' => $value['mtg_code'],
+    //                     'qty_sc_reg' => $value['qty_sc_reg'],
+    //                     'qty_po' => $value['qty_po'],
+    //                     'branch_code' => $value['branch_code'],
+    //                     'data_baru' => true,
+    //                     'created_by' => $user_id,
+    //                     'updated_by' => $user_id,
+    //                 ];
+
+    //                 POCust::create($data);
+    //             }
+    //         } else {
+    //             POCust::where('data_baru', true)
+    //                 ->orWhere('data_baru', null)
+    //                 ->update(['data_baru' => false]);
+
+    //             foreach ($data_csv as $key => $value) {
+
+    //                 $attributes = [
+    //                     'dist_code' => $value['dist_code'],
+    //                     'tgl_order' => $value['tgl_order'],
+    //                     'mtg_code' => $value['mtg_code'],
+    //                     'qty_sc_reg' => $value['qty_sc_reg'],
+    //                     'qty_po' => $value['qty_po'],
+    //                     'branch_code' => $value['branch_code'],
+    //                 ];
+
+    //                 $values = [
+    //                     'qty_sc_reg' => $value['qty_sc_reg'],
+    //                     'qty_po' => $value['qty_po'],
+    //                     'data_baru' => true,
+    //                     'created_by' => $user_id,
+    //                     'updated_by' => $user_id,
+    //                     'deleted_at' => null,
+    //                 ];
+
+    //                 Log::info('Processing Attributes:', $attributes);
+    //                 Log::info('Processing Values:', $values);
+
+    //                 POCust::updateOrCreate($attributes, $values);
+    //             }
+    //         }
+
+    //         if ($key_x === 'end') {
+    //             DB::statement("
+    //             INSERT INTO p_o_custs (
+    //                 dist_code,
+    //                 tgl_order,
+    //                 mtg_code,
+    //                 qty_sc_reg,
+    //                 qty_po,
+    //                 branch_code,
+    //                 data_baru,
+    //                 created_at,
+    //                 updated_at
+    //             )
+    //             SELECT
+    //                 dist_code,
+    //                 tgl_order,
+    //                 mtg_code,
+    //                 qty_sc_reg,
+    //                 qty_po,
+    //                 branch_code,
+    //                 data_baru,
+    //                 created_at,
+    //                 updated_at
+    //             FROM temp_p_o_custs
+    //             WHERE data_baru = true
+    //         ");
+
+    //             Log::info("Data valid dipindahkan ke tabel utama.");
+
+    //             // Bersihkan tabel temporary
+    //             DB::statement("TRUNCATE TABLE temp_p_o_custs RESTART IDENTITY");
+    //             Log::info("Tabel temporary telah dibersihkan (end).");
+    //         }
+
+    //         DB::commit(); // Commit transaksi jika semua berhasil
+    //         return response()->json([
+    //             'code' => 201,
+    //             'status' => true,
+    //             'message' => "Batch dengan key_x {$key_x} berhasil diproses.",
+    //         ], 201);
+    //     } catch (\Exception $e) {
+    //         DB::rollBack(); // Rollback transaksi jika ada error
+    //         Log::error('Error in storeBulky:', ['error' => $e->getMessage()]);
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Failed to create or update data',
+    //             'error' => $e->getMessage(),
+    //         ], 403);
+    //     }
+    // }
+
+    //kode yang insert nya sesuai data
     public function storeBulky(Request $req): JsonResponse
     {
         DB::beginTransaction(); // Mulai transaksi database
@@ -311,6 +431,7 @@ class POCustController extends Controller
         }
     }
 
+    //kode lama hanya bisa insert bawaan
     // public function storeBulky(Request $req): JsonResponse
     // {
     //     DB::beginTransaction();

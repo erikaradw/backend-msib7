@@ -211,31 +211,32 @@ class SalesUnitController extends Controller
 
     public function storeBulky(Request $req): JsonResponse
     {
-        DB::beginTransaction(); // Mulai transaksi database
+        DB::beginTransaction();
         try {
-            // 1. Cek apakah ada data sebelumnya di database
+            $key_x = $req->key_x ?? 'onprocess';
+
+            Log::info("Proses batch dengan key_x: {$key_x}");
+
+            if ($key_x === 'start') {
+                DB::statement("TRUNCATE TABLE temp_sales__units RESTART IDENTITY");
+                Log::info("Tabel temporary dikosongkan (start).");
+            }
+
             $existingDataCount = Sales_Unit::count();
 
-            // 2. Ambil data dari CSV
-            $data_csv = json_decode(json_encode($req->csv), true);
-            $user_id = $req->userid; // ID pengguna dari request
+            $data_csv = json_decode(json_encode($req->data), true);
+            $user_id = $req->userid;
 
-            // Tambahkan log untuk jumlah data yang diupload
-            Log::info('Jumlah data CSV yang diupload:', ['total' => count($data_csv)]);
-
-            // 3. Jika tidak ada data sebelumnya, langsung insert semua data
             if ($existingDataCount === 0) {
                 foreach ($data_csv as $key => $value) {
-                    // Validasi data CSV, pastikan semua kolom wajib diisi
                     if (
                         empty($value['tahun']) || empty($value['bulan']) || empty($value['dist_code']) ||
                         empty($value['kode_cabang']) || empty($value['item_code'])
                     ) {
                         Log::warning("Skipped row due to missing required fields:", $value);
-                        continue; // Lewati jika ada kolom wajib yang kosong
+                        continue;
                     }
 
-                    // Data baru yang akan diinsert
                     $data = [
                         'tahun' => $value['tahun'],
                         'bulan' => $value['bulan'],
@@ -251,26 +252,22 @@ class SalesUnitController extends Controller
                         'updated_by' => $user_id,
                     ];
 
-                    // Insert data baru
                     Sales_Unit::create($data);
                 }
             } else {
-                // 4. Jika ada data sebelumnya, lakukan update or create
                 Sales_Unit::where('data_baru', true)
                     ->orWhere('data_baru', null)
                     ->update(['data_baru' => false]);
 
                 foreach ($data_csv as $key => $value) {
-                    // Validasi data CSV, pastikan semua kolom wajib diisi
                     if (
                         empty($value['tahun']) || empty($value['bulan']) || empty($value['dist_code']) ||
                         empty($value['kode_cabang']) || empty($value['item_code'])
                     ) {
                         Log::warning("Skipped row due to missing required fields:", $value);
-                        continue; // Lewati jika ada kolom wajib yang kosong
+                        continue;
                     }
 
-                    // Tentukan atribut unik untuk mencocokkan data di database
                     $attributes = [
                         'tahun' => $value['tahun'],
                         'bulan' => $value['bulan'],
@@ -283,40 +280,316 @@ class SalesUnitController extends Controller
                         'cust_code' => $value['cust_code'],
                     ];
 
-                    // Data yang akan diupdate atau diinsert
                     $values = [
                         'net_sales_unit' => $value['net_sales_unit'] ?? null,
-                        'data_baru' => true, // Tandai sebagai data baru
+                        'data_baru' => true,
                         'created_by' => $user_id,
                         'updated_by' => $user_id,
                     ];
 
-                    // Gunakan updateOrCreate untuk insert atau update data
                     Sales_Unit::updateOrCreate($attributes, $values);
                 }
             }
 
-            // Tambahkan log untuk jumlah data akhir
             $finalDataCount = Sales_Unit::count();
             Log::info('Jumlah data setelah proses:', ['total' => $finalDataCount]);
 
-            DB::commit(); // Commit transaksi jika semua berhasil
+            // Jika key_x adalah "end", pindahkan data dari temporary ke tabel utama
+            if ($key_x === 'end') {
+                DB::statement("
+                INSERT INTO sales__units (
+                    tahun,
+                    bulan,
+                    dist_code,
+                    chnl_code,
+                    kode_cabang,
+                    brch_name,
+                    item_code,
+                    net_sales_unit,
+                    cust_code,
+                    data_baru,
+                    created_at,
+                    updated_at
+                )
+                SELECT
+                    tahun,
+                    bulan,
+                    dist_code,
+                    chnl_code,
+                    kode_cabang,
+                    brch_name,
+                    item_code,
+                    net_sales_unit,
+                    cust_code,
+                    data_baru,
+                    created_at,
+                    updated_at
+                FROM temp_sales__units
+                WHERE data_baru = true
+            ");
+
+                Log::info("Data valid dipindahkan ke tabel utama.");
+
+                DB::statement("TRUNCATE TABLE temp_sales__units RESTART IDENTITY");
+                Log::info("Tabel temporary telah dibersihkan (end).");
+            }
+
+            DB::commit();
             return response()->json([
                 'code' => 201,
                 'status' => true,
-                'message' => 'Data created or updated successfully',
+                'message' => "Batch dengan key_x {$key_x} berhasil diproses.",
             ], 201);
         } catch (\Exception $e) {
-            DB::rollBack(); // Rollback transaksi jika terjadi error
+            DB::rollBack();
             Log::error('Error in storeBulky:', ['error' => $e->getMessage()]);
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to create or update data',
+                'message' => 'Failed to create, update, or move data',
                 'error' => $e->getMessage(),
             ], 403);
         }
     }
 
+    // public function storeBulky(Request $req): JsonResponse
+    // {
+    //     DB::beginTransaction(); 
+    //     try {
+    //         $existingDataCount = Sales_Unit::count();
+
+    //         $data_csv = json_decode(json_encode($req->csv), true);
+    //         $user_id = $req->userid; 
+
+    //         Log::info('Jumlah data CSV yang diupload:', ['total' => count($data_csv)]);
+
+    //         if ($existingDataCount === 0) {
+    //             foreach ($data_csv as $key => $value) {
+    //                 if (
+    //                     empty($value['tahun']) || empty($value['bulan']) || empty($value['dist_code']) ||
+    //                     empty($value['kode_cabang']) || empty($value['item_code'])
+    //                 ) {
+    //                     Log::warning("Skipped row due to missing required fields:", $value);
+    //                     continue; 
+    //                 }
+
+    //                 $data = [
+    //                     'tahun' => $value['tahun'],
+    //                     'bulan' => $value['bulan'],
+    //                     'dist_code' => $value['dist_code'],
+    //                     'chnl_code' => $value['chnl_code'],
+    //                     'kode_cabang' => $value['kode_cabang'],
+    //                     'brch_name' => $value['brch_name'],
+    //                     'item_code' => $value['item_code'],
+    //                     'net_sales_unit' => $value['net_sales_unit'],
+    //                     'cust_code' => $value['cust_code'],
+    //                     'data_baru' => true,
+    //                     'created_by' => $user_id,
+    //                     'updated_by' => $user_id,
+    //                 ];
+
+    //                 Sales_Unit::create($data);
+    //             }
+    //         } else {
+    //             Sales_Unit::where('data_baru', true)
+    //                 ->orWhere('data_baru', null)
+    //                 ->update(['data_baru' => false]);
+
+    //             foreach ($data_csv as $key => $value) {
+    //                 if (
+    //                     empty($value['tahun']) || empty($value['bulan']) || empty($value['dist_code']) ||
+    //                     empty($value['kode_cabang']) || empty($value['item_code'])
+    //                 ) {
+    //                     Log::warning("Skipped row due to missing required fields:", $value);
+    //                     continue;
+    //                 }
+
+    //                 $attributes = [
+    //                     'tahun' => $value['tahun'],
+    //                     'bulan' => $value['bulan'],
+    //                     'dist_code' => $value['dist_code'],
+    //                     'chnl_code' => $value['chnl_code'],
+    //                     'kode_cabang' => $value['kode_cabang'],
+    //                     'brch_name' => $value['brch_name'],
+    //                     'item_code' => $value['item_code'],
+    //                     'net_sales_unit' => $value['net_sales_unit'],
+    //                     'cust_code' => $value['cust_code'],
+    //                 ];
+
+    //                 $values = [
+    //                     'net_sales_unit' => $value['net_sales_unit'] ?? null,
+    //                     'data_baru' => true, 
+    //                     'created_by' => $user_id,
+    //                     'updated_by' => $user_id,
+    //                 ];
+
+    //                 Sales_Unit::updateOrCreate($attributes, $values);
+    //             }
+    //         }
+
+    //         $finalDataCount = Sales_Unit::count();
+    //         Log::info('Jumlah data setelah proses:', ['total' => $finalDataCount]);
+
+    //         DB::statement("
+    //         INSERT INTO sales__units (
+    //             tahun,
+    //             bulan,
+    //             dist_code,
+    //             chnl_code,
+    //             kode_cabang,
+    //             brch_name,
+    //             item_code,
+    //             net_sales_unit,
+    //             cust_code,
+    //             data_baru,
+    //             created_at,
+    //             updated_at
+    //         )
+    //         SELECT
+    //             tahun,
+    //             bulan,
+    //             dist_code,
+    //             chnl_code,
+    //             kode_cabang,
+    //             brch_name,
+    //             item_code,
+    //             net_sales_unit,
+    //             cust_code,
+    //             data_baru,
+    //             created_at,
+    //             updated_at
+    //         FROM temp_sales__units
+    //         WHERE data_baru = true
+    //     ");
+
+    //         Log::info('Data valid berhasil dipindahkan ke tabel utama.');
+
+    //         DB::statement("TRUNCATE TABLE temp_sales__units");
+
+    //         Log::info('Tabel temporary telah dibersihkan.');
+
+    //         DB::commit(); 
+    //         return response()->json([
+    //             'code' => 201,
+    //             'status' => true,
+    //             'message' => 'Data created, updated, and moved successfully',
+    //         ], 201);
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         Log::error('Error in storeBulky:', ['error' => $e->getMessage()]);
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Failed to create, update, or move data',
+    //             'error' => $e->getMessage(),
+    //         ], 403);
+    //     }
+    // }
+
+    // public function storeBulky(Request $req): JsonResponse
+    // {
+    //     DB::beginTransaction(); // Mulai transaksi database
+    //     try {
+    //         // 1. Cek apakah ada data sebelumnya di database
+    //         $existingDataCount = Sales_Unit::count();
+
+    //         // 2. Ambil data dari CSV
+    //         $data_csv = json_decode(json_encode($req->csv), true);
+    //         $user_id = $req->userid; // ID pengguna dari request
+
+    //         // Tambahkan log untuk jumlah data yang diupload
+    //         Log::info('Jumlah data CSV yang diupload:', ['total' => count($data_csv)]);
+
+    //         // 3. Jika tidak ada data sebelumnya, langsung insert semua data
+    //         if ($existingDataCount === 0) {
+    //             foreach ($data_csv as $key => $value) {
+    //                 // Validasi data CSV, pastikan semua kolom wajib diisi
+    //                 if (
+    //                     empty($value['tahun']) || empty($value['bulan']) || empty($value['dist_code']) ||
+    //                     empty($value['kode_cabang']) || empty($value['item_code'])
+    //                 ) {
+    //                     Log::warning("Skipped row due to missing required fields:", $value);
+    //                     continue; // Lewati jika ada kolom wajib yang kosong
+    //                 }
+
+    //                 // Data baru yang akan diinsert
+    //                 $data = [
+    //                     'tahun' => $value['tahun'],
+    //                     'bulan' => $value['bulan'],
+    //                     'dist_code' => $value['dist_code'],
+    //                     'chnl_code' => $value['chnl_code'],
+    //                     'kode_cabang' => $value['kode_cabang'],
+    //                     'brch_name' => $value['brch_name'],
+    //                     'item_code' => $value['item_code'],
+    //                     'net_sales_unit' => $value['net_sales_unit'],
+    //                     'cust_code' => $value['cust_code'],
+    //                     'data_baru' => true,
+    //                     'created_by' => $user_id,
+    //                     'updated_by' => $user_id,
+    //                 ];
+
+    //                 // Insert data baru
+    //                 Sales_Unit::create($data);
+    //             }
+    //         } else {
+    //             // 4. Jika ada data sebelumnya, lakukan update or create
+    //             Sales_Unit::where('data_baru', true)
+    //                 ->orWhere('data_baru', null)
+    //                 ->update(['data_baru' => false]);
+
+    //             foreach ($data_csv as $key => $value) {
+    //                 // Validasi data CSV, pastikan semua kolom wajib diisi
+    //                 if (
+    //                     empty($value['tahun']) || empty($value['bulan']) || empty($value['dist_code']) ||
+    //                     empty($value['kode_cabang']) || empty($value['item_code'])
+    //                 ) {
+    //                     Log::warning("Skipped row due to missing required fields:", $value);
+    //                     continue; // Lewati jika ada kolom wajib yang kosong
+    //                 }
+
+    //                 // Tentukan atribut unik untuk mencocokkan data di database
+    //                 $attributes = [
+    //                     'tahun' => $value['tahun'],
+    //                     'bulan' => $value['bulan'],
+    //                     'dist_code' => $value['dist_code'],
+    //                     'chnl_code' => $value['chnl_code'],
+    //                     'kode_cabang' => $value['kode_cabang'],
+    //                     'brch_name' => $value['brch_name'],
+    //                     'item_code' => $value['item_code'],
+    //                     'net_sales_unit' => $value['net_sales_unit'],
+    //                     'cust_code' => $value['cust_code'],
+    //                 ];
+
+    //                 // Data yang akan diupdate atau diinsert
+    //                 $values = [
+    //                     'net_sales_unit' => $value['net_sales_unit'] ?? null,
+    //                     'data_baru' => true, // Tandai sebagai data baru
+    //                     'created_by' => $user_id,
+    //                     'updated_by' => $user_id,
+    //                 ];
+
+    //                 Sales_Unit::updateOrCreate($attributes, $values);
+    //             }
+    //         }
+
+    //         // Tambahkan log untuk jumlah data akhir
+    //         $finalDataCount = Sales_Unit::count();
+    //         Log::info('Jumlah data setelah proses:', ['total' => $finalDataCount]);
+
+    //         DB::commit(); // Commit transaksi jika semua berhasil
+    //         return response()->json([
+    //             'code' => 201,
+    //             'status' => true,
+    //             'message' => 'Data created or updated successfully',
+    //         ], 201);
+    //     } catch (\Exception $e) {
+    //         DB::rollBack(); // Rollback transaksi jika terjadi error
+    //         Log::error('Error in storeBulky:', ['error' => $e->getMessage()]);
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Failed to create or update data',
+    //             'error' => $e->getMessage(),
+    //         ], 403);
+    //     }
+    // }
 
     // public function storeBulky(Request $req): JsonResponse
     // {
