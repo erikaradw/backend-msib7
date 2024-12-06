@@ -125,6 +125,7 @@ $router->group(['prefix' => 'si'], function () use ($router) {
     $router->get('/upsertTrends', 'TrendController@upsertTrends');
     $router->get('/grafikTrend', 'TrendController@grafikTrend');
     $router->get('/grafikTrendByBrand', 'TrendController@grafikTrendByBrand');
+    $router->get('/grafikTrendBySKU', 'TrendController@grafikTrendBySKU');
     $router->get('/TrendAnalysis', 'TrendController@fetchTrendAnalysis');
 
     // ROUTES TREND WAREHOUSE
